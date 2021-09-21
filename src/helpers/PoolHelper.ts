@@ -250,6 +250,6 @@ export default class Pool {
         return prev + curr;
       }, 0) / 7;
 
-    return Number((APY7d * 100).toFixed(2));
+    return Number((APY7d * 100).toFixed(2)) || 0;
   }
 }
