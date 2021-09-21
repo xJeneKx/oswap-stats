@@ -65,8 +65,6 @@ export function decryptPackage(
   objEncryptedPackage: any,
   objMyTempDeviceKey: any
 ): any {
-  console.log("Expected " + objEncryptedPackage.dh.recipient_ephemeral_pubkey);
-
   const priv_key = objMyTempDeviceKey.priv;
   if (objMyTempDeviceKey.use_count) objMyTempDeviceKey.use_count++;
   else objMyTempDeviceKey.use_count = 1;

@@ -64,7 +64,6 @@ export default class Pool {
     decimals: IDecimals
   ): Promise<void> {
     const info = await fetchAAInfo(Client, this.address);
-    console.log("info", this.address);
     this.swapFee = Math.floor(parseFloat(info.swap_fee));
     this.asset = info.asset;
     this.reserve0 = Math.floor(parseFloat(info.reserve0));
@@ -239,17 +238,17 @@ export default class Pool {
       type = "base";
       rate = exchangeRates.value[`${asset}_USD`];
     }
-    const fees7d = candlesLast7d.map((c: ICandles) => {
+    const APY7D = candlesLast7d.map((c: ICandles) => {
       const volume = type === "quote" ? c.quote_volume : c.base_volume;
       const inUSD = Math.floor(volume) * rate;
       return ((inUSD * fee) / Math.floor(this.marketcap)) * 365;
     });
 
-    const APY7d =
-      fees7d.reduce((prev: number, curr: number): number => {
+    const avgAPY =
+      APY7D.reduce((prev: number, curr: number): number => {
         return prev + curr;
       }, 0) / 7;
 
-    return Number((APY7d * 100).toFixed(2)) || 0;
+    return Number((avgAPY * 100).toFixed(2)) || 0;
   }
 }
