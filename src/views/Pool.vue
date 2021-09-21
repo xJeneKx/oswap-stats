@@ -62,6 +62,7 @@ onMounted(updatePool);
           <a-tag class="tag fee">{{ pool.swapFee / 1000000000 }}%</a-tag>
           <a-button
             type="primary"
+            size="large"
             style="border-radius: 8px; float: right; margin-top: 2px"
             @click="goToOswapIO"
             >Add liquidity</a-button

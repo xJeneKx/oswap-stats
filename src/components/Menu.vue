@@ -71,6 +71,5 @@ function goToSwap(): void {
   color: #fff;
   cursor: pointer;
   border-bottom: 2px solid #fff;
-  transition: 500ms;
 }
 </style>
