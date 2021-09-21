@@ -78,7 +78,7 @@ const data = computed(() => {
 </script>
 
 <template>
-  <Menu />
+  <Menu :is-home="true" />
 
   <div
     style="

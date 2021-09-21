@@ -1,5 +1,14 @@
 <script setup lang="ts">
+import { defineProps } from "vue";
 import { useRouter } from "vue-router";
+
+defineProps({
+  isHome: {
+    type: Boolean,
+    default: false,
+    required: false,
+  },
+});
 
 const router = useRouter();
 
@@ -28,7 +37,7 @@ function goToSwap(): void {
         />
       </div>
       <div class="menu-items">
-        <span class="active" @click="goToHome">Pools</span>
+        <span :class="isHome ? 'active' : ''" @click="goToHome">Pools</span>
         <span @click="goToSwap">Swap</span>
       </div>
     </div>
