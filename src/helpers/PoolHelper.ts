@@ -207,19 +207,14 @@ export default class Pool {
 
     let assetValue0 = 0;
     let assetValue1 = 0;
-    if (this.base) {
-      assetValue0 = assetValue1 =
-        (exchangeRates.value.GBYTE_USD / 1e9) * this.base;
-    } else {
-      const assetId0 = ticker.base_id === "base" ? "GBYTE" : ticker.base_id;
-      const assetId1 = ticker.quote_id === "base" ? "GBYTE" : ticker.quote_id;
-      assetValue0 = exchangeRates.value[`${assetId0}_USD`]
-        ? exchangeRates.value[`${assetId0}_USD`] * ticker.base_volume
-        : 0;
-      assetValue1 = exchangeRates.value[`${assetId1}_USD`]
-        ? exchangeRates.value[`${assetId1}_USD`] * ticker.quote_volume
-        : 0;
-    }
+    const assetId0 = ticker.base_id === "base" ? "GBYTE" : ticker.base_id;
+    const assetId1 = ticker.quote_id === "base" ? "GBYTE" : ticker.quote_id;
+    assetValue0 = exchangeRates.value[`${assetId0}_USD`]
+      ? exchangeRates.value[`${assetId0}_USD`] * ticker.base_volume
+      : 0;
+    assetValue1 = exchangeRates.value[`${assetId1}_USD`]
+      ? exchangeRates.value[`${assetId1}_USD`] * ticker.quote_volume
+      : 0;
 
     return assetValue0 && assetValue1
       ? Number((assetValue0 + assetValue1).toFixed(2))
