@@ -46,11 +46,26 @@ const columns = ref([
     title: "TVL",
     dataIndex: "TVL",
     key: "tvl",
+    defaultSortOrder: "descend",
+    sortDirections: ["descend"],
+    sorter: (a, b) => a.TVL - b.TVL,
+    slots: { customRender: "TVL" },
+  },
+  {
+    title: "APY 24h",
+    dataIndex: "APY",
+    key: "APY",
+    sortDirections: ["descend"],
+    sorter: (a, b) => a.APY - b.APY,
+    slots: { customRender: "APY" },
   },
   {
     title: "Volume 24H",
     dataIndex: "volume",
     key: "volume",
+    sortDirections: ["descend"],
+    sorter: (a, b) => a.volume - b.volume,
+    slots: { customRender: "volume" },
   },
 ]);
 
@@ -64,14 +79,17 @@ const data = computed(() => {
         fee: pool.swapFee / 1000000000,
         address: pool.address,
       },
-      TVL: "$" + pool.marketcap.toFixed(2),
-      volume:
-        "$" +
-        pool.get24hVolumeInUSD(
-          tickers.value,
-          poolsData.value.assets,
-          Client.exchangeRates
-        ),
+      TVL: Number(pool.marketcap.toFixed(2)),
+      APY: pool.get24hAPY(
+        tickers.value,
+        poolsData.value.assets,
+        Client.exchangeRates
+      ),
+      volume: pool.get24hVolumeInUSD(
+        tickers.value,
+        poolsData.value.assets,
+        Client.exchangeRates
+      ),
     };
   });
 });
@@ -106,6 +124,9 @@ const data = computed(() => {
           {{ objPool.name }}
           <a-tag class="fee" style="margin-left: 8px">{{ objPool.fee }}%</a-tag>
         </template>
+        <template #TVL="{ text }">${{ text }}</template>
+        <template #APY="{ text }">{{ text }}%</template>
+        <template #volume="{ text }">${{ text }}</template>
       </a-table>
     </div>
   </div>

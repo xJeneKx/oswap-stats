@@ -221,6 +221,30 @@ export default class Pool {
       : 0;
   }
 
+  get24hAPY(
+    tickers: ITickers,
+    assets: IAssetsList,
+    exchangeRates: Ref<IExchangeRates>
+  ): number {
+    const ticker = tickers[this.getTickerForAPI(assets)];
+    if (!ticker) return 0;
+
+    const fee = this.swapFee / 10 ** 11;
+    let asset = this.asset0;
+    let type = "quote";
+    let rate = exchangeRates.value[`${asset}_USD`];
+    if (!rate) {
+      asset = this.asset1;
+      type = "base";
+      rate = exchangeRates.value[`${asset}_USD`];
+    }
+
+    const volume = type === "quote" ? ticker.quote_volume : ticker.base_volume;
+    const inUSD = volume * rate;
+    const APY = ((inUSD * fee) / this.marketcap) * 365;
+    return Number((APY * 100).toFixed(2)) || 0;
+  }
+
   getAPY7d(candles: ICandles[], exchangeRates: Ref<IExchangeRates>): number {
     if (candles.length < 7) return 0;
     const candlesLast7d = candles.slice(-7);
@@ -235,8 +259,8 @@ export default class Pool {
     }
     const APY7D = candlesLast7d.map((c: ICandles) => {
       const volume = type === "quote" ? c.quote_volume : c.base_volume;
-      const inUSD = Math.floor(volume) * rate;
-      return ((inUSD * fee) / Math.floor(this.marketcap)) * 365;
+      const inUSD = volume * rate;
+      return ((inUSD * fee) / this.marketcap) * 365;
     });
 
     const avgAPY =
