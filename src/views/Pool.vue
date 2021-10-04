@@ -30,7 +30,7 @@ const isMobile = computed(() => windowSize.x.value < 576);
 const pool: Ref<Pool> = ref({} as Pool);
 const candles: Ref<ICandles[]> = ref([]);
 const chart = ref<HTMLElement>();
-const blockWithChart = ref(null) as any;
+const blockWithChart = ref({}) as any;
 const c = ref(null) as any;
 const areaSeries = ref() as any;
 const blockSize = ref(0);
@@ -217,6 +217,7 @@ watch(
 );
 watch([chart, candles], fillChart);
 watch(currentChart, setChart);
+watch(isReady, resize, { deep: true });
 onMounted(updatePool);
 onUnmounted(() => window.removeEventListener("resize", resize));
 </script>
