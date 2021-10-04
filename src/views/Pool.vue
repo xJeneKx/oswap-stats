@@ -11,6 +11,7 @@ import fetchBalancesForLast60Days from "@/api/fetchBalancesForLast60Days";
 import { ICandles } from "@/interfaces/candles.inerface";
 import Menu from "@/components/Menu.vue";
 import useWindowSize from "@/composables/useWindowSize";
+import { addZero } from "@/helpers/date.helper";
 
 const Client = inject("Obyte") as Obyte.Client;
 const store = useStore();
@@ -57,7 +58,7 @@ async function updatePool() {
   );
   candlesForChart.value = candles.value.map((v) => {
     return {
-      time: v.start_timestamp,
+      time: v.start_timestamp.split("T")[0],
       value: getVolumeInUSDHelper(
         pool.value.asset0,
         pool.value.asset1,
@@ -69,7 +70,7 @@ async function updatePool() {
   const balances = await fetchBalancesForLast60Days(pool.value.address);
   balancesForChart.value = balances.map((b) => {
     return {
-      time: b.creation_date,
+      time: b.creation_date.split(" ")[0],
       value: Number(
         pool.value
           .getMarketcapByBalances(
@@ -86,7 +87,7 @@ async function updatePool() {
 }
 
 function timeToDate(time: any): string {
-  return new Date(time.year, time.month, time.day).toLocaleDateString();
+  return `${time.year}/${addZero(time.month)}/${addZero(time.day)}`;
 }
 
 function fillChart() {
