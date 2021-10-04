@@ -6,16 +6,19 @@ import Obyte from "@/obyte";
 import Pool from "@/helpers/PoolHelper";
 import { ITickers } from "@/interfaces/tickers.interface";
 import Menu from "@/components/Menu.vue";
+import useWindowSize from "@/composables/useWindowSize";
 
 const Client = inject("Obyte") as Obyte.Client;
 const store = useStore();
 const router = useRouter();
+const windowSize = useWindowSize();
 
 store.dispatch("initIfNotInit", Client);
 
 const poolsData = computed(() => store.state.poolsData);
 const tickers: ComputedRef<ITickers> = computed(() => store.state.tickers);
 const isReady = computed(() => store.state.ready);
+const isMobile = computed(() => windowSize.x.value < 576);
 
 const customRow = (pool: { pool: { address: string } }) => {
   return {
@@ -48,7 +51,7 @@ const columns = ref([
     key: "tvl",
     defaultSortOrder: "descend",
     sortDirections: ["descend"],
-    sorter: (a, b) => a.TVL - b.TVL,
+    sorter: (a: any, b: any) => a.TVL - b.TVL,
     slots: { customRender: "TVL" },
   },
   {
@@ -56,7 +59,7 @@ const columns = ref([
     dataIndex: "APY",
     key: "APY",
     sortDirections: ["descend"],
-    sorter: (a, b) => a.APY - b.APY,
+    sorter: (a: any, b: any) => a.APY - b.APY,
     slots: { customRender: "APY" },
   },
   {
@@ -64,8 +67,26 @@ const columns = ref([
     dataIndex: "volume",
     key: "volume",
     sortDirections: ["descend"],
-    sorter: (a, b) => a.volume - b.volume,
+    sorter: (a: any, b: any) => a.volume - b.volume,
     slots: { customRender: "volume" },
+  },
+]);
+
+const mobileColumns = ref([
+  {
+    title: "Pool",
+    dataIndex: "pool",
+    key: "pool",
+    slots: { customRender: "pool" },
+  },
+  {
+    title: "TVL",
+    dataIndex: "TVL",
+    key: "tvl",
+    defaultSortOrder: "descend",
+    sortDirections: ["descend"],
+    sorter: (a: any, b: any) => a.TVL - b.TVL,
+    slots: { customRender: "TVL" },
   },
 ]);
 
@@ -93,11 +114,24 @@ const data = computed(() => {
     };
   });
 });
+
+const mobileData = computed(() => {
+  return poolsData.value.pools.map((pool: Pool) => {
+    return {
+      key: pool.ticker,
+      pool: {
+        name: pool.ticker,
+        fee: pool.swapFee / 1000000000,
+        address: pool.address,
+      },
+      TVL: Number(pool.marketcap.toFixed(2)),
+    };
+  });
+});
 </script>
 
 <template>
   <Menu :is-home="true" />
-
   <div
     style="
       color: #fff;
@@ -108,6 +142,7 @@ const data = computed(() => {
   >
     Statistics for oswap.io
   </div>
+  <div v-if="!isReady" style="text-align: center"><a-spin size="large" /></div>
 
   <div v-if="isReady">
     <div
@@ -115,8 +150,8 @@ const data = computed(() => {
     >
       <a-table
         class="table"
-        :dataSource="data"
-        :columns="columns"
+        :dataSource="isMobile ? mobileData : data"
+        :columns="isMobile ? mobileColumns : columns"
         :custom-row="customRow"
         :rowClassName="(record, index) => 'table-pointer'"
       >

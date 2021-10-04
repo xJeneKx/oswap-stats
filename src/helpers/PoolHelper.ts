@@ -197,6 +197,33 @@ export default class Pool {
     return assetValue0 && assetValue1 ? assetValue0 + assetValue1 : 0;
   }
 
+  getMarketcapByBalances(
+    balances: any,
+    assets: IAssetsList,
+    exchangeRates: Ref<IExchangeRates>
+  ): number {
+    let assetValue0 = 0;
+    let assetValue1 = 0;
+    if (this.base) {
+      assetValue0 = assetValue1 =
+        (exchangeRates.value.GBYTE_USD / 1e9) * balances["GBYTE"];
+    } else {
+      const assetId0 = this.asset0 === "base" ? "GBYTE" : this.asset0;
+      const assetId1 = this.asset1 === "base" ? "GBYTE" : this.asset1;
+      const asset0 = assets[assetId0];
+      const asset1 = assets[assetId1];
+      assetValue0 = exchangeRates.value[`${assetId0}_USD`]
+        ? exchangeRates.value[`${assetId0}_USD`] *
+          this.assetValue(balances[assetId0], asset0)
+        : 0;
+      assetValue1 = exchangeRates.value[`${assetId1}_USD`]
+        ? exchangeRates.value[`${assetId1}_USD`] *
+          this.assetValue(balances[assetId1], asset1)
+        : 0;
+    }
+    return assetValue0 && assetValue1 ? assetValue0 + assetValue1 : 0;
+  }
+
   get24hVolumeInUSD(
     tickers: ITickers,
     assets: IAssetsList,
