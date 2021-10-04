@@ -40,6 +40,7 @@ const balancesForChart = ref([]) as Ref<IForChart[]>;
 const currentChart = ref(1);
 
 function resize() {
+  if (!blockWithChart.value) return;
   blockSize.value = blockWithChart.value.offsetWidth - 32;
   c.value.resize(blockSize.value, 250);
   c.value.timeScale().fitContent();
@@ -56,7 +57,6 @@ async function updatePool() {
     pool.value.getTickerForAPI(assets)
   );
   candlesForChart.value = candles.value.map((v) => {
-    console.log("f", v.start_timestamp);
     return {
       time: v.start_timestamp,
       value: getVolumeInUSDHelper(
@@ -82,10 +82,8 @@ async function updatePool() {
       ),
     };
   });
-
-  console.log(candlesForChart.value);
-  console.log(balancesForChart.value);
   window.addEventListener("resize", resize);
+  resize();
 }
 
 function timeToDate(time: any): string {
@@ -179,7 +177,6 @@ function fillChart() {
     date: timeToDate(time),
   };
   resize();
-  c.value.timeScale().fitContent();
 }
 
 function setChart(): void {
