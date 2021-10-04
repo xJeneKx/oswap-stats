@@ -39,8 +39,11 @@ const candlesForChart = ref([]) as Ref<IForChart[]>;
 const balancesForChart = ref([]) as Ref<IForChart[]>;
 const currentChart = ref(1);
 
-function resize() {
-  if (!blockWithChart.value) return;
+function resize(): void {
+  if (!blockWithChart.value) {
+    setTimeout(resize, 100);
+    return;
+  }
   blockSize.value = blockWithChart.value.offsetWidth - 32;
   c.value.resize(blockSize.value, 250);
   c.value.timeScale().fitContent();
@@ -217,7 +220,6 @@ watch(
 );
 watch([chart, candles], fillChart);
 watch(currentChart, setChart);
-watch(isReady, resize, { deep: true });
 onMounted(updatePool);
 onUnmounted(() => window.removeEventListener("resize", resize));
 </script>
