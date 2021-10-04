@@ -30,7 +30,7 @@ const isMobile = computed(() => windowSize.x.value < 576);
 const pool: Ref<Pool> = ref({} as Pool);
 const candles: Ref<ICandles[]> = ref([]);
 const chart = ref<HTMLElement>();
-const blockWithChart = ref({}) as any;
+const blockWithChart = ref(null) as any;
 const c = ref(null) as any;
 const areaSeries = ref() as any;
 const blockSize = ref(0);
@@ -40,10 +40,6 @@ const balancesForChart = ref([]) as Ref<IForChart[]>;
 const currentChart = ref(1);
 
 function resize(): void {
-  if (!blockWithChart.value) {
-    setTimeout(resize, 100);
-    return;
-  }
   blockSize.value = blockWithChart.value.offsetWidth - 32;
   c.value.resize(blockSize.value, 250);
   c.value.timeScale().fitContent();
@@ -334,8 +330,11 @@ onUnmounted(() => window.removeEventListener("resize", resize));
                 </a-col>
               </a-row>
             </div>
-            <div ref="blockWithChart" style="padding: 0 16px 8px">
-              <div ref="chart"></div>
+            <div
+              :ref="(el) => (blockWithChart = el)"
+              style="padding: 0 16px 8px"
+            >
+              <div :ref="(el) => (chart = el)"></div>
             </div>
           </div>
         </a-col>
