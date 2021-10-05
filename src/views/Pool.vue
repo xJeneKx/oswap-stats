@@ -98,13 +98,13 @@ function fillChart() {
       width: blockSize.value,
       height: 250,
       rightPriceScale: {
-        visible: false,
+        visible: true,
       },
       leftPriceScale: {
         visible: false,
       },
       timeScale: {
-        visible: false,
+        visible: true,
       },
       crosshair: {
         horzLine: {
@@ -116,6 +116,7 @@ function fillChart() {
       },
       layout: {
         backgroundColor: "#1c2024",
+        textColor: "#d9d9d9",
       },
       grid: {
         vertLines: {
@@ -179,14 +180,34 @@ function fillChart() {
   resize();
 }
 
+function recreateChart(): void {
+  c.value.removeSeries(areaSeries.value);
+  areaSeries.value = c.value.addAreaSeries({
+    topColor: "rgba(23, 125, 220, 0.5)",
+    lineColor: "rgba(23, 125, 220, 1)",
+    bottomColor: "rgba(23, 125, 220, 0)",
+    lineWidth: 2,
+    autoscaleInfoProvider: (original: () => any) => {
+      const res = original();
+      if (res !== null) {
+        res.priceRange.minValue = 0;
+        res.priceRange.maxValue += 10;
+      }
+      return res;
+    },
+  });
+}
+
 function setChart(): void {
   if (currentChart.value === 1) {
+    recreateChart();
     areaSeries.value.setData(candlesForChart.value);
     priceAndDate.value = {
       price: candlesForChart.value[candles.value.length - 1].value,
       date: timeToDate(candlesForChart.value[candles.value.length - 1].time),
     };
   } else if (currentChart.value === 2) {
+    recreateChart();
     areaSeries.value.setData(balancesForChart.value);
     priceAndDate.value = {
       price: balancesForChart.value[balancesForChart.value.length - 1].value,

@@ -7,6 +7,12 @@ import Pool from "@/helpers/PoolHelper";
 import { ITickers } from "@/interfaces/tickers.interface";
 import Menu from "@/components/Menu.vue";
 import useWindowSize from "@/composables/useWindowSize";
+import {
+  TableState,
+  TableStateFilters,
+} from "ant-design-vue/es/table/interface";
+
+type Pagination = TableState["pagination"];
 
 const Client = inject("Obyte") as Obyte.Client;
 const store = useStore();
@@ -19,6 +25,14 @@ const poolsData = computed(() => store.state.poolsData);
 const tickers: ComputedRef<ITickers> = computed(() => store.state.tickers);
 const isReady = computed(() => store.state.ready);
 const isMobile = computed(() => windowSize.x.value < 576);
+
+const sortedInfo = ref({
+  columnKey: "tvl",
+});
+
+if (localStorage.getItem("sort_key")) {
+  sortedInfo.value = { columnKey: localStorage.getItem("sort_key") || "tvl" };
+}
 
 const customRow = (pool: { pool: { address: string } }) => {
   return {
@@ -33,44 +47,49 @@ const customRow = (pool: { pool: { address: string } }) => {
   };
 };
 
-const columns = ref([
-  {
-    title: "#",
-    dataIndex: "n",
-    key: "n",
-  },
-  {
-    title: "Pool",
-    dataIndex: "pool",
-    key: "pool",
-    slots: { customRender: "pool" },
-  },
-  {
-    title: "TVL",
-    dataIndex: "TVL",
-    key: "tvl",
-    defaultSortOrder: "descend",
-    sortDirections: ["descend"],
-    sorter: (a: any, b: any) => a.TVL - b.TVL,
-    slots: { customRender: "TVL" },
-  },
-  {
-    title: "APY 24h",
-    dataIndex: "APY",
-    key: "APY",
-    sortDirections: ["descend"],
-    sorter: (a: any, b: any) => a.APY - b.APY,
-    slots: { customRender: "APY" },
-  },
-  {
-    title: "Volume 24H",
-    dataIndex: "volume",
-    key: "volume",
-    sortDirections: ["descend"],
-    sorter: (a: any, b: any) => a.volume - b.volume,
-    slots: { customRender: "volume" },
-  },
-]);
+const columns = computed(() => {
+  const key = sortedInfo.value.columnKey;
+  return [
+    {
+      title: "#",
+      dataIndex: "n",
+      key: "n",
+    },
+    {
+      title: "Pool",
+      dataIndex: "pool",
+      key: "pool",
+      slots: { customRender: "pool" },
+    },
+    {
+      title: "TVL",
+      dataIndex: "TVL",
+      key: "tvl",
+      sortDirections: ["descend"],
+      sorter: (a: any, b: any) => a.TVL - b.TVL,
+      sortOrder: key === "tvl" && "descend",
+      slots: { customRender: "TVL" },
+    },
+    {
+      title: "APY 24h",
+      dataIndex: "APY",
+      key: "APY",
+      sortDirections: ["descend"],
+      sorter: (a: any, b: any) => a.APY - b.APY,
+      sortOrder: key === "APY" && "descend",
+      slots: { customRender: "APY" },
+    },
+    {
+      title: "Volume 24H",
+      dataIndex: "volume",
+      key: "volume",
+      sortDirections: ["descend"],
+      sorter: (a: any, b: any) => a.volume - b.volume,
+      sortOrder: key === "volume" && "descend",
+      slots: { customRender: "volume" },
+    },
+  ];
+});
 
 const mobileColumns = ref([
   {
@@ -128,6 +147,18 @@ const mobileData = computed(() => {
     };
   });
 });
+
+const handleChange = (
+  pagination: Pagination,
+  filters: TableStateFilters,
+  sorter: any
+) => {
+  console.log("Various parameters", pagination, filters, sorter);
+  sortedInfo.value = {
+    columnKey: sorter.columnKey,
+  };
+  localStorage.setItem("sort_key", sorter.columnKey);
+};
 </script>
 
 <template>
@@ -154,6 +185,7 @@ const mobileData = computed(() => {
         :columns="isMobile ? mobileColumns : columns"
         :custom-row="customRow"
         :rowClassName="(record, index) => 'table-pointer'"
+        @change="handleChange"
       >
         <template #pool="{ text: objPool }">
           {{ objPool.name }}
