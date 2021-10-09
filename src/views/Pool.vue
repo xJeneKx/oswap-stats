@@ -38,6 +38,8 @@ const blockSize = ref(0);
 const priceAndDate = ref<any>({ price: 0 });
 const candlesForChart = ref([]) as Ref<IForChart[]>;
 const balancesForChart = ref([]) as Ref<IForChart[]>;
+const prices0ForChart = ref([]) as Ref<IForChart[]>;
+const prices1ForChart = ref([]) as Ref<IForChart[]>;
 const currentChart = ref(1);
 
 function resize(): void {
@@ -82,12 +84,39 @@ async function updatePool() {
       ),
     };
   });
+  balances.forEach((b) => {
+    const balances = pool.value.getPricesByBalances(b, poolsData.value.assets);
+    prices0ForChart.value.push({
+      time: b.creation_date.split(" ")[0],
+      value: balances[0],
+    });
+    prices1ForChart.value.push({
+      time: b.creation_date.split(" ")[0],
+      value: balances[1],
+    });
+  });
   window.addEventListener("resize", resize);
   resize();
 }
 
 function timeToDate(time: any): string {
   return `${time.year}/${addZero(time.month)}/${addZero(time.day)}`;
+}
+
+function getPriceText(amount: number) {
+  if (currentChart.value === 1 || currentChart.value === 2) {
+    return "$" + Math.round(amount * 100) / 100;
+  } else if (currentChart.value === 3) {
+    return `${amount} ${pool.value.getTicker(
+      pool.value.asset0,
+      poolsData.value.assets
+    )}/${pool.value.getSymbol(pool.value.asset1, poolsData.value.assets)}`;
+  } else if (currentChart.value === 4) {
+    return `${amount} ${pool.value.getSymbol(
+      pool.value.asset1,
+      poolsData.value.assets
+    )}/${pool.value.getTicker(pool.value.asset0, poolsData.value.assets)}`;
+  }
 }
 
 function fillChart() {
@@ -138,8 +167,21 @@ function fillChart() {
     });
 
     c.value.subscribeCrosshairMove(function (param: any) {
-      const chart =
-        currentChart.value === 1 ? candlesForChart : balancesForChart;
+      let chart = candlesForChart;
+      switch (currentChart.value) {
+        case 1:
+          chart = candlesForChart;
+          break;
+        case 2:
+          chart = balancesForChart;
+          break;
+        case 3:
+          chart = prices0ForChart;
+          break;
+        case 4:
+          chart = prices1ForChart;
+          break;
+      }
       if (
         !param.time ||
         param.point.x < 0 ||
@@ -150,15 +192,16 @@ function fillChart() {
         const time = chart.value[chart.value.length - 1].time;
 
         priceAndDate.value = {
-          price: Number(chart.value[candles.value.length - 1].value),
+          price: getPriceText(
+            Number(chart.value[candles.value.length - 1].value)
+          ),
           date: timeToDate(time),
         };
         return;
       }
-      const price = param.seriesPrices.values().next().value;
-
+      let price = param.seriesPrices.values().next().value;
       priceAndDate.value = {
-        price: Math.round(price * 100) / 100,
+        price: getPriceText(price),
         date: timeToDate(param.time),
       };
     });
@@ -174,7 +217,7 @@ function fillChart() {
   areaSeries.value.setData(candlesForChart.value);
   const time = candlesForChart.value[candlesForChart.value.length - 1].time;
   priceAndDate.value = {
-    price: candlesForChart.value[candles.value.length - 1].value,
+    price: getPriceText(candlesForChart.value[candles.value.length - 1].value),
     date: timeToDate(time),
   };
   resize();
@@ -191,7 +234,6 @@ function recreateChart(): void {
       const res = original();
       if (res !== null) {
         res.priceRange.minValue = 0;
-        res.priceRange.maxValue += 10;
       }
       return res;
     },
@@ -203,16 +245,42 @@ function setChart(): void {
     recreateChart();
     areaSeries.value.setData(candlesForChart.value);
     priceAndDate.value = {
-      price: candlesForChart.value[candles.value.length - 1].value,
+      price: getPriceText(
+        candlesForChart.value[candles.value.length - 1].value
+      ),
       date: timeToDate(candlesForChart.value[candles.value.length - 1].time),
     };
   } else if (currentChart.value === 2) {
     recreateChart();
     areaSeries.value.setData(balancesForChart.value);
     priceAndDate.value = {
-      price: balancesForChart.value[balancesForChart.value.length - 1].value,
+      price: getPriceText(
+        balancesForChart.value[balancesForChart.value.length - 1].value
+      ),
       date: timeToDate(
         balancesForChart.value[balancesForChart.value.length - 1].time
+      ),
+    };
+  } else if (currentChart.value === 3) {
+    recreateChart();
+    areaSeries.value.setData(prices0ForChart.value);
+    priceAndDate.value = {
+      price: getPriceText(
+        prices0ForChart.value[prices0ForChart.value.length - 1].value
+      ),
+      date: timeToDate(
+        prices0ForChart.value[prices0ForChart.value.length - 1].time
+      ),
+    };
+  } else if (currentChart.value === 4) {
+    recreateChart();
+    areaSeries.value.setData(prices1ForChart.value);
+    priceAndDate.value = {
+      price: getPriceText(
+        prices1ForChart.value[prices1ForChart.value.length - 1].value
+      ),
+      date: timeToDate(
+        prices1ForChart.value[prices1ForChart.value.length - 1].time
       ),
     };
   }
@@ -333,18 +401,28 @@ onUnmounted(() => window.removeEventListener("resize", resize));
           >
             <div style="padding: 16px">
               <a-row>
-                <a-col :span="12">
+                <a-col :xs="24" :sm="24" :xl="16">
                   <a-radio-group
                     v-model:value="currentChart"
                     style="background-color: #24292e"
                   >
                     <a-radio-button :value="1">Volume</a-radio-button>
                     <a-radio-button :value="2">TVL</a-radio-button>
+                    <a-radio-button :value="3"
+                      >{{ pool.getTicker(pool.asset0, poolsData.assets) }}/{{
+                        pool.getSymbol(pool.asset1, poolsData.assets)
+                      }}</a-radio-button
+                    >
+                    <a-radio-button :value="4"
+                      >{{ pool.getSymbol(pool.asset1, poolsData.assets) }}/{{
+                        pool.getTicker(pool.asset0, poolsData.assets)
+                      }}</a-radio-button
+                    >
                   </a-radio-group>
                 </a-col>
-                <a-col :span="12" style="text-align: right">
+                <a-col :xs="24" :sm="24" :xl="8" style="text-align: right">
                   <div style="font-weight: bold; font-size: 16px">
-                    ${{ priceAndDate.price }}
+                    {{ priceAndDate.price }}
                   </div>
                   <div style="font-size: 12px; color: #acb7c3">
                     {{ priceAndDate.date }}

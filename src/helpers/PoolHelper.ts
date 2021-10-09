@@ -167,8 +167,8 @@ export default class Pool {
   ): number {
     const amount = this.getPrice(assetId, assets);
     const multiplier = 10 ** decimals;
-    const str = parseFloat((amount / multiplier).toFixed(decimals));
-    return isNaN(str) || str < 0 ? 0 : str;
+    const nmbr = parseFloat((amount / multiplier).toFixed(decimals));
+    return isNaN(nmbr) || nmbr < 0 ? 0 : nmbr;
   }
 
   getMarketcap(
@@ -195,6 +195,24 @@ export default class Pool {
         : 0;
     }
     return assetValue0 && assetValue1 ? assetValue0 + assetValue1 : 0;
+  }
+
+  getPricesByBalances(balances: any, assets: IAssetsList): [number, number] {
+    function format(amount: number, decimals: number): number {
+      const multiplier = 10 ** decimals;
+      const nmbr = parseFloat((amount / multiplier).toFixed(decimals));
+      return isNaN(nmbr) || nmbr < 0 ? 0 : nmbr;
+    }
+
+    const asset0 = assets[this.asset0];
+    const asset1 = assets[this.asset1];
+    const decimals0 = asset0 ? asset0.decimals : 0;
+    const decimals1 = asset1 ? asset1.decimals : 0;
+    const balance0 =
+      (balances[this.asset1] / balances[this.asset0]) * 10 ** decimals0;
+    const balance1 =
+      (balances[this.asset0] / balances[this.asset1]) * 10 ** decimals1;
+    return [format(balance0, decimals1), format(balance1, decimals0)];
   }
 
   getMarketcapByBalances(
