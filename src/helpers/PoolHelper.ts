@@ -204,14 +204,14 @@ export default class Pool {
       return isNaN(nmbr) || nmbr < 0 ? 0 : nmbr;
     }
 
-    const asset0 = assets[this.asset0];
-    const asset1 = assets[this.asset1];
-    const decimals0 = asset0 ? asset0.decimals : 0;
-    const decimals1 = asset1 ? asset1.decimals : 0;
-    const balance0 =
-      (balances[this.asset1] / balances[this.asset0]) * 10 ** decimals0;
-    const balance1 =
-      (balances[this.asset0] / balances[this.asset1]) * 10 ** decimals1;
+    const asset0 = this.asset0 === "base" ? "GBYTE" : this.asset0;
+    const asset1 = this.asset1 === "base" ? "GBYTE" : this.asset1;
+    const assetInfo0 = assets[this.asset0];
+    const assetInfo1 = assets[this.asset1];
+    const decimals0 = assetInfo0 ? assetInfo0.decimals : 0;
+    const decimals1 = assetInfo1 ? assetInfo1.decimals : 0;
+    const balance0 = (balances[asset1] / balances[asset0]) * 10 ** decimals0;
+    const balance1 = (balances[asset0] / balances[asset1]) * 10 ** decimals1;
     return [format(balance0, decimals1), format(balance1, decimals0)];
   }
 
