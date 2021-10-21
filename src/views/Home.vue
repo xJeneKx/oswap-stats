@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { inject, computed, ComputedRef, ref } from "vue";
+import { inject, computed, ComputedRef, ref, watch, onMounted } from "vue";
 import { useStore } from "vuex";
 import { useRouter } from "vue-router";
 import Obyte from "@/obyte";
@@ -7,6 +7,7 @@ import Pool from "@/helpers/PoolHelper";
 import { ITickers } from "@/interfaces/tickers.interface";
 import Menu from "@/components/Menu.vue";
 import useWindowSize from "@/composables/useWindowSize";
+import fetchAPY7Days from "@/api/fetchAPY7Days";
 import {
   TableState,
   TableStateFilters,
@@ -18,13 +19,21 @@ const Client = inject("Obyte") as Obyte.Client;
 const store = useStore();
 const router = useRouter();
 const windowSize = useWindowSize();
+const apy7d = ref({}) as any;
 
 store.dispatch("initIfNotInit", Client);
 
+const exchangeRates = computed(() => store.state.exchangeRates);
 const poolsData = computed(() => store.state.poolsData);
 const tickers: ComputedRef<ITickers> = computed(() => store.state.tickers);
 const isReady = computed(() => store.state.ready);
 const isMobile = computed(() => windowSize.x.value < 576);
+
+async function updateAPY7d() {
+  apy7d.value = await fetchAPY7Days();
+}
+watch(poolsData, updateAPY7d);
+onMounted(updateAPY7d);
 
 const sortedInfo = ref({
   columnKey: "tvl",
@@ -71,7 +80,7 @@ const columns = computed(() => {
       slots: { customRender: "TVL" },
     },
     {
-      title: "APY 24h",
+      title: "APY 7d",
       dataIndex: "APY",
       key: "APY",
       sortDirections: ["descend"],
@@ -120,15 +129,11 @@ const data = computed(() => {
         address: pool.address,
       },
       TVL: Number(pool.marketcap.toFixed(2)),
-      APY: pool.get24hAPY(
-        tickers.value,
-        poolsData.value.assets,
-        Client.exchangeRates
-      ),
+      APY: apy7d.value[pool.tickerForApi] || 0,
       volume: pool.get24hVolumeInUSD(
         tickers.value,
         poolsData.value.assets,
-        Client.exchangeRates
+        exchangeRates.value
       ),
     };
   });
@@ -153,7 +158,6 @@ const handleChange = (
   filters: TableStateFilters,
   sorter: any
 ) => {
-  console.log("Various parameters", pagination, filters, sorter);
   sortedInfo.value = {
     columnKey: sorter.columnKey,
   };

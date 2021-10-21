@@ -2,12 +2,14 @@ import { createStore } from "vuex";
 import fetchInitialData from "@/api/fetchInitialData";
 import fetchPoolData from "@/api/fetchPoolData";
 import fetchTickers from "@/api/fetchTickers";
+import fetchExchangeRates from "@/api/fetchExchangeRates";
 
 export default createStore({
   state: {
     initData: {},
     poolsData: [],
     tickers: {},
+    exchangeRates: {},
     ready: false,
   },
   mutations: {
@@ -23,10 +25,16 @@ export default createStore({
     setReady(state, status) {
       state.ready = status;
     },
+    setExchangeRates(state, exchangeRates) {
+      state.exchangeRates = exchangeRates;
+    },
   },
   actions: {
     async initIfNotInit({ commit, state }, Client) {
       if (state.ready) return;
+
+      const exchangeRates = await fetchExchangeRates();
+      commit("setExchangeRates", exchangeRates);
 
       const initData = await fetchInitialData(Client);
       const { factory, a2sRegistry, descriptionRegistry, decimalsRegistry } =
@@ -37,7 +45,8 @@ export default createStore({
         factory,
         a2sRegistry,
         descriptionRegistry,
-        decimalsRegistry
+        decimalsRegistry,
+        exchangeRates
       );
 
       const tickers = await fetchTickers();

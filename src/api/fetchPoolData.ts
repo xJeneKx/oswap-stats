@@ -1,4 +1,4 @@
-import Obyte from "@/obyte";
+import Obyte, { IExchangeRates } from "@/obyte";
 import Pool from "@/helpers/PoolHelper";
 import { IState } from "@/interfaces/aa.interface";
 import { IDecimals } from "@/interfaces/decimals.interface";
@@ -32,7 +32,8 @@ export default async function fetchPoolData(
   factory: IState,
   a2sRegistry: IState,
   descriptionRegistry: IState,
-  decimalsRegistry: IState
+  decimalsRegistry: IState,
+  exchangeRates: IExchangeRates
 ): Promise<{
   assets: IAssetsList;
   decimals: IDecimals;
@@ -86,7 +87,7 @@ export default async function fetchPoolData(
     await Promise.all(promises);
     pools = _pools
       .map((pool) => {
-        pool.marketcap = pool.getMarketcap(assets, Client.exchangeRates);
+        pool.marketcap = pool.getMarketcap(assets, exchangeRates);
         return pool;
       })
       .sort((a, b) => {

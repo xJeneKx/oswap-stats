@@ -24,6 +24,7 @@ interface IForChart {
 }
 
 store.dispatch("initIfNotInit", Client);
+const exchangeRates = computed(() => store.state.exchangeRates);
 const isReady = computed(() => store.state.ready);
 const poolsData = computed(() => store.state.poolsData);
 const tickers = computed(() => store.state.tickers);
@@ -65,7 +66,7 @@ async function updatePool() {
         pool.value.asset0,
         pool.value.asset1,
         v,
-        Client.exchangeRates
+        exchangeRates
       ),
     };
   });
@@ -78,7 +79,7 @@ async function updatePool() {
           .getMarketcapByBalances(
             b,
             poolsData.value.assets,
-            Client.exchangeRates
+            exchangeRates.value
           )
           .toFixed(2)
       ),
@@ -374,11 +375,7 @@ onUnmounted(() => window.removeEventListener("resize", resize));
             <div class="titleInBlock">Volume 24H</div>
             <div class="contentInBlock">
               ${{
-                pool.get24hVolumeInUSD(
-                  tickers,
-                  poolsData.assets,
-                  Client.exchangeRates
-                )
+                pool.get24hVolumeInUSD(tickers, poolsData.assets, exchangeRates)
               }}
             </div>
           </div>
@@ -391,7 +388,7 @@ onUnmounted(() => window.removeEventListener("resize", resize));
           <div class="block">
             <div class="titleInBlock">APY 7D</div>
             <div class="contentInBlock">
-              {{ pool.getAPY7d(candles, Client.exchangeRates) }}%
+              {{ pool.getAPY7d(candles, exchangeRates) }}%
             </div>
           </div>
         </a-col>

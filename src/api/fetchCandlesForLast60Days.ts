@@ -8,7 +8,7 @@ export default async function fetchCandlesForLast60Days(
 ): Promise<ICandles[]> {
   const date = new Date();
   const end = date.toISOString();
-  date.setDate(date.getDate() - 60);
+  date.setUTCDate(date.getUTCDate() - 60);
   const start = date.toISOString();
   const { data } = await axios.get(
     `${API_HOST}/api/v1/candles/${market_name}?period=daily&start=${start}&end=${end}`

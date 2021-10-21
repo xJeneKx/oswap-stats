@@ -171,26 +171,22 @@ export default class Pool {
     return isNaN(nmbr) || nmbr < 0 ? 0 : nmbr;
   }
 
-  getMarketcap(
-    assets: IAssetsList,
-    exchangeRates: Ref<IExchangeRates>
-  ): number {
+  getMarketcap(assets: IAssetsList, exchangeRates: IExchangeRates): number {
     let assetValue0 = 0;
     let assetValue1 = 0;
     if (this.base) {
-      assetValue0 = assetValue1 =
-        (exchangeRates.value.GBYTE_USD / 1e9) * this.base;
+      assetValue0 = assetValue1 = (exchangeRates.GBYTE_USD / 1e9) * this.base;
     } else {
       const assetId0 = this.asset0 === "base" ? "GBYTE" : this.asset0;
       const assetId1 = this.asset1 === "base" ? "GBYTE" : this.asset1;
       const asset0 = assets[assetId0];
       const asset1 = assets[assetId1];
-      assetValue0 = exchangeRates.value[`${assetId0}_USD`]
-        ? exchangeRates.value[`${assetId0}_USD`] *
+      assetValue0 = exchangeRates[`${assetId0}_USD`]
+        ? exchangeRates[`${assetId0}_USD`] *
           this.assetValue(this.reserve0, asset0)
         : 0;
-      assetValue1 = exchangeRates.value[`${assetId1}_USD`]
-        ? exchangeRates.value[`${assetId1}_USD`] *
+      assetValue1 = exchangeRates[`${assetId1}_USD`]
+        ? exchangeRates[`${assetId1}_USD`] *
           this.assetValue(this.reserve1, asset1)
         : 0;
     }
@@ -218,24 +214,24 @@ export default class Pool {
   getMarketcapByBalances(
     balances: any,
     assets: IAssetsList,
-    exchangeRates: Ref<IExchangeRates>
+    exchangeRates: IExchangeRates
   ): number {
     let assetValue0 = 0;
     let assetValue1 = 0;
     if (this.base) {
       assetValue0 = assetValue1 =
-        (exchangeRates.value.GBYTE_USD / 1e9) * balances["GBYTE"];
+        (exchangeRates.GBYTE_USD / 1e9) * balances["GBYTE"];
     } else {
       const assetId0 = this.asset0 === "base" ? "GBYTE" : this.asset0;
       const assetId1 = this.asset1 === "base" ? "GBYTE" : this.asset1;
       const asset0 = assets[assetId0];
       const asset1 = assets[assetId1];
-      assetValue0 = exchangeRates.value[`${assetId0}_USD`]
-        ? exchangeRates.value[`${assetId0}_USD`] *
+      assetValue0 = exchangeRates[`${assetId0}_USD`]
+        ? exchangeRates[`${assetId0}_USD`] *
           this.assetValue(balances[assetId0], asset0)
         : 0;
-      assetValue1 = exchangeRates.value[`${assetId1}_USD`]
-        ? exchangeRates.value[`${assetId1}_USD`] *
+      assetValue1 = exchangeRates[`${assetId1}_USD`]
+        ? exchangeRates[`${assetId1}_USD`] *
           this.assetValue(balances[assetId1], asset1)
         : 0;
     }
@@ -245,7 +241,7 @@ export default class Pool {
   get24hVolumeInUSD(
     tickers: ITickers,
     assets: IAssetsList,
-    exchangeRates: Ref<IExchangeRates>
+    exchangeRates: IExchangeRates
   ): number {
     const ticker = tickers[this.getTickerForAPI(assets)];
     if (!ticker) return 0;
@@ -254,11 +250,11 @@ export default class Pool {
     let assetValue1 = 0;
     const assetId0 = ticker.base_id === "base" ? "GBYTE" : ticker.base_id;
     const assetId1 = ticker.quote_id === "base" ? "GBYTE" : ticker.quote_id;
-    assetValue0 = exchangeRates.value[`${assetId0}_USD`]
-      ? exchangeRates.value[`${assetId0}_USD`] * ticker.base_volume
+    assetValue0 = exchangeRates[`${assetId0}_USD`]
+      ? exchangeRates[`${assetId0}_USD`] * ticker.base_volume
       : 0;
-    assetValue1 = exchangeRates.value[`${assetId1}_USD`]
-      ? exchangeRates.value[`${assetId1}_USD`] * ticker.quote_volume
+    assetValue1 = exchangeRates[`${assetId1}_USD`]
+      ? exchangeRates[`${assetId1}_USD`] * ticker.quote_volume
       : 0;
 
     return assetValue0 && assetValue1
@@ -290,21 +286,24 @@ export default class Pool {
     return Number((APY * 100).toFixed(2)) || 0;
   }
 
-  getAPY7d(candles: ICandles[], exchangeRates: Ref<IExchangeRates>): number {
+  getAPY7d(candles: ICandles[], exchangeRates: IExchangeRates): number {
     if (candles.length < 7) return 0;
     const candlesLast7d = candles.slice(-7);
     const fee = this.swapFee / 10 ** 11;
-    let asset = this.asset0;
+    let asset = this.asset0 === "base" ? "GBYTE" : this.asset0;
     let type = "quote";
-    let rate = exchangeRates.value[`${asset}_USD`];
+    let rate = exchangeRates[`${asset}_USD`];
     if (!rate) {
-      asset = this.asset1;
+      asset = this.asset1 === "base" ? "GBYTE" : this.asset1;
       type = "base";
-      rate = exchangeRates.value[`${asset}_USD`];
+      rate = exchangeRates[`${asset}_USD`];
     }
+    console.log("c", this.asset0, this.asset1, asset, type, rate);
+    console.log(candlesLast7d);
     const APY7D = candlesLast7d.map((c: ICandles) => {
       const volume = type === "quote" ? c.quote_volume : c.base_volume;
       const inUSD = volume * rate;
+      console.log("aaa", volume, inUSD, fee, this.marketcap);
       return ((inUSD * fee) / this.marketcap) * 365;
     });
 
@@ -313,6 +312,8 @@ export default class Pool {
         return prev + curr;
       }, 0) / 7;
 
+    console.log(avgAPY);
+    console.log("res", this.reserve0, this.reserve1);
     return Number((avgAPY * 100).toFixed(2)) || 0;
   }
 }
