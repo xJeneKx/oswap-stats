@@ -12,6 +12,7 @@ import {
   TableState,
   TableStateFilters,
 } from "ant-design-vue/es/table/interface";
+import { InfoCircleOutlined } from '@ant-design/icons-vue';
 
 type Pagination = TableState["pagination"];
 
@@ -56,6 +57,14 @@ const customRow = (pool: { pool: { address: string } }) => {
   };
 };
 
+const formatNumbers = (n: number) => {
+  if (n < 1e3) return n;
+  if (n >= 1e3 && n < 1e6) return +(n / 1e3).toFixed(2) + "k";
+  if (n >= 1e6 && n < 1e9) return +(n / 1e6).toFixed(2) + "M";
+  if (n >= 1e9 && n < 1e12) return +(n / 1e9).toFixed(2) + "B";
+  if (n >= 1e12) return +(n / 1e12).toFixed(2) + "T";
+};
+
 const columns = computed(() => {
   const key = sortedInfo.value.columnKey;
   return [
@@ -71,26 +80,24 @@ const columns = computed(() => {
       slots: { customRender: "pool" },
     },
     {
-      title: "TVL",
-      dataIndex: "TVL",
+      dataIndex: "TVLString",
       key: "tvl",
       sortDirections: ["descend"],
-      sorter: (a: any, b: any) => a.TVL - b.TVL,
+      sorter: (a: any, b: any) => a.TVLString - b.TVLString,
       sortOrder: key === "tvl" && "descend",
-      slots: { customRender: "TVL" },
+      slots: { title: 'tvl-title', customRender: "TVL" },
     },
     {
-      title: "APY 7d",
       dataIndex: "APY",
       key: "APY",
       sortDirections: ["descend"],
       sorter: (a: any, b: any) => a.APY - b.APY,
       sortOrder: key === "APY" && "descend",
-      slots: { customRender: "APY" },
+      slots: { title: 'apy-title', customRender: "APY" },
     },
     {
       title: "Volume 24H",
-      dataIndex: "volume",
+      dataIndex: "volumeString",
       key: "volume",
       sortDirections: ["descend"],
       sorter: (a: any, b: any) => a.volume - b.volume,
@@ -120,6 +127,16 @@ const mobileColumns = ref([
 
 const data = computed(() => {
   return poolsData.value.pools.map((pool: Pool, index: number) => {
+    const TVL = Number(pool.marketcap.toFixed(2));
+    const TVLString = formatNumbers(TVL);
+
+    const volume = pool.get24hVolumeInUSD(
+        tickers.value,
+        poolsData.value.assets,
+        exchangeRates.value
+    );
+    const volumeString = formatNumbers(volume);
+
     return {
       key: pool.ticker,
       n: index + 1,
@@ -128,13 +145,11 @@ const data = computed(() => {
         fee: pool.swapFee / 1000000000,
         address: pool.address,
       },
-      TVL: Number(pool.marketcap.toFixed(2)),
+      TVL,
+      TVLString,
       APY: apy7d.value[pool.tickerForApi] || 0,
-      volume: pool.get24hVolumeInUSD(
-        tickers.value,
-        poolsData.value.assets,
-        exchangeRates.value
-      ),
+      volume,
+      volumeString
     };
   });
 });
@@ -191,6 +206,24 @@ const handleChange = (
         :rowClassName="(record, index) => 'table-pointer'"
         @change="handleChange"
       >
+        <template #tvl-title>
+          <span>
+            TVL
+            <a-tooltip>
+              <template #title>some TVL info</template>
+              <InfoCircleOutlined/>
+            </a-tooltip>
+          </span>
+        </template>
+        <template #apy-title>
+          <span>
+            APY 7d
+            <a-tooltip>
+              <template #title>some APY info</template>
+              <InfoCircleOutlined/>
+            </a-tooltip>
+          </span>
+        </template>
         <template #pool="{ text: objPool }">
           {{ objPool.name }}
           <a-tag class="fee" style="margin-left: 8px">{{ objPool.fee }}%</a-tag>
