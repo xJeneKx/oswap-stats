@@ -51,6 +51,7 @@ export default class Pool {
   supply = 0;
   base = 0;
   marketcap = 0;
+  history: any;
 
   constructor(address: string, assets: string[]) {
     this.asset0 = assets[0];
