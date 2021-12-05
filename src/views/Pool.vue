@@ -8,8 +8,9 @@ import Obyte from "@/obyte";
 import Pool from "@/helpers/PoolHelper";
 import fetchCandlesForLast60Days from "@/api/fetchCandlesForLast60Days";
 import fetchBalancesForLast60Days from "@/api/fetchBalancesForLast60Days";
-import { fetchAAHistory, getAAResponses, getJoint } from "@/api/fetchAAHistory";
+import fetchAAHistory from "@/api/fetchAAHistory";
 import { ICandles } from "@/interfaces/candles.inerface";
+import { IHistory } from "@/interfaces/poolHistory.interface";
 import Menu from "@/components/Menu.vue";
 import useWindowSize from "@/composables/useWindowSize";
 import { addZero } from "@/helpers/date.helper";
@@ -75,63 +76,13 @@ function getInAmount(objTriggerUnit: any, aa_address: string, asset = 'base'){
   return amount;
 }
 
-async function treatAAHistory(history: any) {
-  const result = [];
-
-  for (let i = 0; i < history.length; i++) {
-    const type =  history[i].response.responseVars.type;
-
-    const asset0_amount_out = history[i].response.responseVars.asset0_amount || 0;
-    const asset1_amount_out = history[i].response.responseVars.asset1_amount || 0;
-
-    const swapDirection = asset0_amount_out > 0 ? '1 - 0' : '0 - 1';
-
-    const asset0_amount_in = getInAmount(history[i].objResponseUnit, history[i].aa_address, pool.value.asset0);
-    const asset1_amount_in = getInAmount(history[i].objResponseUnit, history[i].aa_address, pool.value.asset1);
-
-    const timestamp = new Date(history[i].timestamp * 1000).toISOString();
-
-    const author = history[i].trigger_address;
-    const unit = history[i].trigger_unit;
-    const unitData = await getJoint(Client, unit);
-
-    if(history[i].trigger_unit === 'uH2cgt/BpYAUy0MaFHgsXrlzxL3eX/iU8j/opaWJtRc=') {
-      console.error('UNIT', unitData)
-
-      console.error(pool.value.asset0, ' - ', pool.value.asset1)
-
-      console.error('0in', asset0_amount_in);
-      console.error('0out', asset0_amount_out);
-      console.error('1in', asset1_amount_in);
-      console.error('1out', asset1_amount_out);
-    }
-
-    result.push({
-      unit,
-      timestamp,
-      type,
-      author,
-      ...(swapDirection === '1 - 0' ? { asset0: asset0_amount_out, asset1: asset1_amount_in } :  { asset0: asset0_amount_in, asset1: asset1_amount_out }),
-    })
-  }
-
-  return result;
-}
-
 async function updatePool() {
   if (!isReady.value) return;
   pool.value = poolsData.value.pools.find((p: Pool) => {
     return p.address === route.params.address;
   });
 
-  const poolHistory = await getAAResponses(Client, pool.value.address);
-
-  console.error('poolHistory', poolHistory);
-
-  pool.value.history = await treatAAHistory(poolHistory);
-  //console.error(pool.value);
-
-  //pool.value.history = ;
+  pool.value.history = await fetchAAHistory(pool.value.address);
 
   const { assets } = poolsData.value;
   candles.value = await fetchCandlesForLast60Days(
@@ -374,6 +325,57 @@ function goToOswapIO(): void {
   a.click();
 }
 
+const columns = computed(() => {
+  return [
+    {
+      title: "Type",
+      dataIndex: "type",
+      key: "type",
+      slots: { customRender: 'type' }
+    },
+    {
+      title: 'Base Amount',
+      dataIndex: "baseAmount",
+      key: "baseAmount",
+    },
+    {
+      title: 'Quote Amount',
+      dataIndex: "quoteAmount",
+      key: "quoteAmount",
+    },
+    {
+      title: 'Date',
+      dataIndex: "date",
+      key: "date",
+    },
+  ];
+});
+
+const data = computed(() => {
+  return pool.value.history.map((item: IHistory) => {
+    const baseSymbol = pool.value.getSymbol(item.base_asset, poolsData.value.assets);
+    const quoteSymbol = pool.value.getSymbol(item.quote_asset, poolsData.value.assets);
+
+    const typeMap = {
+      'burn': 'Burn',
+      'mint': 'Mint',
+      'swap_in': `Swap ${quoteSymbol} to ${baseSymbol}`,
+      'swap_out': `Swap ${baseSymbol} to ${quoteSymbol}`,
+    };
+    const type = typeMap[item.type];
+
+    return {
+      type,
+      unit: item.trigger_unit,
+      base: baseSymbol,
+      quote: quoteSymbol,
+      baseAmount: pool.value.assetValue(item.base_qty, poolsData.value.assets[item.base_asset]),
+      quoteAmount: pool.value.assetValue(item.quote_qty, poolsData.value.assets[item.quote_asset]),
+      date: (new Date(item.timestamp)).toLocaleString(),
+    }
+  });
+});
+
 watch(poolsData, updatePool);
 watch(
   () => route.params.address,
@@ -514,6 +516,19 @@ onUnmounted(() => window.removeEventListener("resize", resize));
           </div>
         </a-col>
       </a-row>
+      <a-table
+          class="table"
+          :dataSource="data"
+          :columns="columns"
+          :custom-row="customRow"
+          :rowClassName="(record, index) => 'table-pointer'"
+      >
+        <template #type="{ record }">
+          <span>
+            <a target="_blank" :href="`https://explorer.obyte.org/#${record.unit}`">{{ record.type }}</a>
+          </span>
+        </template>
+      </a-table>
     </div>
   </div>
 </template>
