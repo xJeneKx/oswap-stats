@@ -25,6 +25,10 @@ interface IForChart {
   value: number;
 }
 
+interface ITypeMap {
+  [key: string]: string;
+}
+
 store.dispatch("initIfNotInit", Client);
 const exchangeRates = computed(() => store.state.exchangeRates);
 const isReady = computed(() => store.state.ready);
@@ -49,31 +53,6 @@ function resize(): void {
   blockSize.value = blockWithChart.value.offsetWidth - 32;
   c.value.resize(blockSize.value, 250);
   c.value.timeScale().fitContent();
-}
-
-function getInAmount(objTriggerUnit: any, aa_address: string, asset = 'base'){
-
-  if (!objTriggerUnit)
-    return 0;
-  let amount = 0;
-  objTriggerUnit.messages.forEach(function (message: any) {
-    if (message.app !== 'payment') {
-      return;
-    }
-
-    const payload = message.payload;
-
-    if (asset == 'base' && payload.asset || asset != 'base' && asset !== payload.asset) {
-      return;
-    }
-
-    payload.outputs.forEach(function (output: any){
-      if (output.address === aa_address) {
-        amount += output.amount; // in case there are several outputs
-      }
-    });
-  });
-  return amount;
 }
 
 async function updatePool() {
@@ -326,25 +305,41 @@ function goToOswapIO(): void {
 }
 
 const columns = computed(() => {
+  let ready = 1;
+  let baseSymbol = "";
+  let quoteSymbol = "";
+  if (!pool.value.history?.length) {
+    ready = 0;
+  } else {
+    baseSymbol = pool.value.getSymbol(
+      pool.value.history[0].base_asset,
+      poolsData.value.assets
+    );
+    quoteSymbol = pool.value.getSymbol(
+      pool.value.history[0].quote_asset,
+      poolsData.value.assets
+    );
+  }
+
   return [
     {
       title: "Type",
       dataIndex: "type",
       key: "type",
-      slots: { customRender: 'type' }
+      slots: { customRender: "type" },
     },
     {
-      title: 'Base Amount',
+      title: ready ? `${baseSymbol} amount` : "Base Amount",
       dataIndex: "baseAmount",
       key: "baseAmount",
     },
     {
-      title: 'Quote Amount',
+      title: ready ? `${quoteSymbol} amount` : "Quote Amount",
       dataIndex: "quoteAmount",
       key: "quoteAmount",
     },
     {
-      title: 'Date',
+      title: "Date",
       dataIndex: "date",
       key: "date",
     },
@@ -352,27 +347,54 @@ const columns = computed(() => {
 });
 
 const data = computed(() => {
-  return pool.value.history.map((item: IHistory) => {
-    const baseSymbol = pool.value.getSymbol(item.base_asset, poolsData.value.assets);
-    const quoteSymbol = pool.value.getSymbol(item.quote_asset, poolsData.value.assets);
+  if (!pool.value.history?.length) return [];
 
-    const typeMap = {
-      'burn': 'Burn',
-      'mint': 'Mint',
-      'swap_in': `Swap ${quoteSymbol} to ${baseSymbol}`,
-      'swap_out': `Swap ${baseSymbol} to ${quoteSymbol}`,
-    };
+  console.log("h", pool.value.history[0]);
+
+  const baseSymbol = pool.value.getSymbol(
+    pool.value.history[0].base_asset,
+    poolsData.value.assets
+  );
+  const quoteSymbol = pool.value.getSymbol(
+    pool.value.history[0].quote_asset,
+    poolsData.value.assets
+  );
+
+  const typeMap: ITypeMap = {
+    burn: "Burn",
+    mint: "Mint",
+    swap_in: `Swap ${quoteSymbol} to ${baseSymbol}`,
+    swap_out: `Swap ${baseSymbol} to ${quoteSymbol}`,
+  };
+  return pool.value.history.map((item: IHistory) => {
     const type = typeMap[item.type];
 
+    let asset0Amount = 0,
+      asset1Amount = 0;
+    if (item.type === "swap_out") {
+      asset1Amount = item.base_qty;
+      asset0Amount = item.quote_qty;
+    } else {
+      asset0Amount = item.base_qty;
+      asset1Amount = item.quote_qty;
+    }
+
     return {
+      key: item.trigger_unit,
       type,
       unit: item.trigger_unit,
       base: baseSymbol,
       quote: quoteSymbol,
-      baseAmount: pool.value.assetValue(item.base_qty, poolsData.value.assets[item.base_asset]),
-      quoteAmount: pool.value.assetValue(item.quote_qty, poolsData.value.assets[item.quote_asset]),
-      date: (new Date(item.timestamp)).toLocaleString(),
-    }
+      baseAmount: pool.value.assetValue(
+        asset0Amount,
+        poolsData.value.assets[item.base_asset]
+      ),
+      quoteAmount: pool.value.assetValue(
+        asset1Amount,
+        poolsData.value.assets[item.quote_asset]
+      ),
+      date: new Date(item.timestamp).toLocaleString(),
+    };
   });
 });
 
@@ -517,15 +539,18 @@ onUnmounted(() => window.removeEventListener("resize", resize));
         </a-col>
       </a-row>
       <a-table
-          class="table"
-          :dataSource="data"
-          :columns="columns"
-          :custom-row="customRow"
-          :rowClassName="(record, index) => 'table-pointer'"
+        class="table"
+        :dataSource="data"
+        :columns="columns"
+        :rowClassName="(record, index) => 'table-pointer'"
       >
         <template #type="{ record }">
           <span>
-            <a target="_blank" :href="`https://explorer.obyte.org/#${record.unit}`">{{ record.type }}</a>
+            <a
+              target="_blank"
+              :href="`https://explorer.obyte.org/#${record.unit}`"
+              >{{ record.type }}</a
+            >
           </span>
         </template>
       </a-table>

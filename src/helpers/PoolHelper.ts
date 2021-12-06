@@ -299,12 +299,9 @@ export default class Pool {
       type = "base";
       rate = exchangeRates[`${asset}_USD`];
     }
-    console.log("c", this.asset0, this.asset1, asset, type, rate);
-    console.log(candlesLast7d);
     const APY7D = candlesLast7d.map((c: ICandles) => {
       const volume = type === "quote" ? c.quote_volume : c.base_volume;
       const inUSD = volume * rate;
-      console.log("aaa", volume, inUSD, fee, this.marketcap);
       return ((inUSD * fee) / this.marketcap) * 365;
     });
 
@@ -313,8 +310,6 @@ export default class Pool {
         return prev + curr;
       }, 0) / 7;
 
-    console.log(avgAPY);
-    console.log("res", this.reserve0, this.reserve1);
     return Number((avgAPY * 100).toFixed(2)) || 0;
   }
 }
