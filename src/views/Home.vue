@@ -12,7 +12,7 @@ import {
   TableState,
   TableStateFilters,
 } from "ant-design-vue/es/table/interface";
-import { InfoCircleOutlined } from '@ant-design/icons-vue';
+import { InfoCircleOutlined } from "@ant-design/icons-vue";
 
 type Pagination = TableState["pagination"];
 
@@ -85,7 +85,7 @@ const columns = computed(() => {
       sortDirections: ["descend"],
       sorter: (a: any, b: any) => a.TVLString - b.TVLString,
       sortOrder: key === "tvl" && "descend",
-      slots: { title: 'tvl-title', customRender: "TVL" },
+      slots: { title: "tvl-title", customRender: "TVL" },
     },
     {
       dataIndex: "APY",
@@ -93,7 +93,7 @@ const columns = computed(() => {
       sortDirections: ["descend"],
       sorter: (a: any, b: any) => a.APY - b.APY,
       sortOrder: key === "APY" && "descend",
-      slots: { title: 'apy-title', customRender: "APY" },
+      slots: { title: "apy-title", customRender: "APY" },
     },
     {
       title: "Volume 24H",
@@ -131,9 +131,9 @@ const data = computed(() => {
     const TVLString = formatNumbers(TVL);
 
     const volume = pool.get24hVolumeInUSD(
-        tickers.value,
-        poolsData.value.assets,
-        exchangeRates.value
+      tickers.value,
+      poolsData.value.assets,
+      exchangeRates.value
     );
     const volumeString = formatNumbers(volume);
 
@@ -149,7 +149,7 @@ const data = computed(() => {
       TVLString,
       APY: apy7d.value[pool.tickerForApi] || 0,
       volume,
-      volumeString
+      volumeString,
     };
   });
 });
@@ -210,8 +210,8 @@ const handleChange = (
           <span>
             TVL
             <a-tooltip>
-              <template #title>some TVL info</template>
-              <InfoCircleOutlined/>
+              <template #title>Total Value Locked</template>
+              <InfoCircleOutlined />
             </a-tooltip>
           </span>
         </template>
@@ -219,8 +219,8 @@ const handleChange = (
           <span>
             APY 7d
             <a-tooltip>
-              <template #title>some APY info</template>
-              <InfoCircleOutlined/>
+              <template #title>Average annual return for 7 days</template>
+              <InfoCircleOutlined />
             </a-tooltip>
           </span>
         </template>
