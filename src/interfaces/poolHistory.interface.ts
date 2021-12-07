@@ -1,4 +1,5 @@
 export interface IHistory {
+    "trigger_address": string;
     "response_unit": string,
     "trigger_unit": string,
     "base_asset": string,

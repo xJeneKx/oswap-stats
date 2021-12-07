@@ -135,6 +135,9 @@ function fillChart() {
     c.value = createChart(chart.value, {
       width: blockSize.value,
       height: 250,
+      localization: {
+        dateFormat: 'yyyy/MM/dd'
+      },
       rightPriceScale: {
         visible: true,
       },
@@ -339,6 +342,11 @@ const columns = computed(() => {
       key: "quoteAmount",
     },
     {
+      title: "Author",
+      dataIndex: "author",
+      key: "author",
+    },
+    {
       title: "Date",
       dataIndex: "date",
       key: "date",
@@ -383,6 +391,7 @@ const data = computed(() => {
       key: item.trigger_unit,
       type,
       unit: item.trigger_unit,
+      author: item.trigger_address,
       base: baseSymbol,
       quote: quoteSymbol,
       baseAmount: pool.value.assetValue(
@@ -393,7 +402,7 @@ const data = computed(() => {
         asset1Amount,
         poolsData.value.assets[item.quote_asset]
       ),
-      date: new Date(item.timestamp).toLocaleString(),
+      date: new Date(item.timestamp).toLocaleDateString('en-ZA'),
     };
   });
 });
