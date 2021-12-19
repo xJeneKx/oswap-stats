@@ -138,7 +138,7 @@ const data = computed(() => {
     const volumeString = formatNumbers(volume);
 
     return {
-      key: pool.ticker,
+      key: pool.address,
       n: index + 1,
       pool: {
         name: pool.ticker,
@@ -217,9 +217,9 @@ const handleChange = (
         </template>
         <template #apy-title>
           <span>
-            APY 7d
+            APY
             <a-tooltip>
-              <template #title>Average annual return for 7 days</template>
+              <template #title>Based on the last 7 days</template>
               <InfoCircleOutlined />
             </a-tooltip>
           </span>

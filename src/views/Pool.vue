@@ -49,10 +49,16 @@ const prices0ForChart = ref([]) as Ref<IForChart[]>;
 const prices1ForChart = ref([]) as Ref<IForChart[]>;
 const currentChart = ref(1);
 
+let mousePosition = { x: 0, y: 0 };
+
 function resize(): void {
   blockSize.value = blockWithChart.value.offsetWidth - 32;
   c.value.resize(blockSize.value, 250);
   c.value.timeScale().fitContent();
+}
+
+function setMousePosition(event: MouseEvent): void {
+  mousePosition = { x: event.pageX, y: event.pageY };
 }
 
 async function updatePool() {
@@ -105,7 +111,23 @@ async function updatePool() {
     });
   });
   window.addEventListener("resize", resize);
+  window.addEventListener("mousemove", setMousePosition);
   resize();
+  switch (location.hash) {
+    case "#volume":
+      currentChart.value = 1;
+      break;
+    case "#tvl":
+      currentChart.value = 2;
+      break;
+    case "#asset1":
+      currentChart.value = 3;
+      break;
+    case "#asset2":
+      currentChart.value = 4;
+      break;
+  }
+  setChart();
 }
 
 function timeToDate(time: any): string {
@@ -126,10 +148,11 @@ function getPriceText(amount: number) {
       poolsData.value.assets
     )}/${pool.value.getTicker(pool.value.asset0, poolsData.value.assets)}`;
   }
+  return 0;
 }
 
 function formatPrice(n: number) {
-  if (n < 1e3) return n;
+  if (n < 1e3) return n.toFixed(2);
   if (n >= 1e3 && n < 1e6) return +(n / 1e3).toFixed(2) + "k";
   if (n >= 1e6 && n < 1e9) return +(n / 1e6).toFixed(2) + "M";
   if (n >= 1e9 && n < 1e12) return +(n / 1e9).toFixed(2) + "B";
@@ -144,11 +167,9 @@ function fillChart() {
       width: blockSize.value,
       height: 250,
       localization: {
-        dateFormat: 'yyyy/MM/dd',
-        priceFormatter: (val: number) => formatPrice(val)
+        dateFormat: "yyyy/MM/dd",
       },
       rightPriceScale: {
-        autoScale: false,
         visible: true,
       },
       leftPriceScale: {
@@ -188,6 +209,9 @@ function fillChart() {
       },
     });
 
+    const toolTip = document.getElementById("toolTip") as HTMLElement;
+    const ttAmount = document.getElementById("ttAmount") as HTMLElement;
+    const ttDate = document.getElementById("ttDate") as HTMLElement;
     c.value.subscribeCrosshairMove(function (param: any) {
       let chart = candlesForChart;
       switch (currentChart.value) {
@@ -215,17 +239,23 @@ function fillChart() {
 
         priceAndDate.value = {
           price: getPriceText(
-            Number(chart.value[candles.value.length - 1].value)
+            Number(chart.value[chart.value.length - 1].value)
           ),
           date: timeToDate(time),
         };
+        toolTip.style.display = "none";
         return;
       }
       let price = param.seriesPrices.values().next().value;
       priceAndDate.value = {
-        price: getPriceText(price),
-        date: timeToDate(param.time),
+        price: "",
+        date: "",
       };
+      ttAmount.innerHTML = getPriceText(price).toString();
+      ttDate.innerHTML = timeToDate(param.time);
+      toolTip.style.display = "block";
+      toolTip.style.left = mousePosition.x + "px";
+      toolTip.style.top = mousePosition.y - toolTip.clientHeight - 8 + "px";
     });
   }
 
@@ -234,6 +264,15 @@ function fillChart() {
     lineColor: "rgba(23, 125, 220, 1)",
     bottomColor: "rgba(23, 125, 220, 0)",
     lineWidth: 2,
+    priceFormat: {
+      type: "custom",
+      formatter: (price: number) => {
+        return formatPrice(price);
+      },
+    },
+    priceScale: {
+      autoScale: true,
+    },
   });
 
   areaSeries.value.setData(candlesForChart.value);
@@ -252,6 +291,12 @@ function recreateChart(): void {
     lineColor: "rgba(23, 125, 220, 1)",
     bottomColor: "rgba(23, 125, 220, 0)",
     lineWidth: 2,
+    priceFormat: {
+      type: "custom",
+      formatter: (price: number) => {
+        return formatPrice(price);
+      },
+    },
     autoscaleInfoProvider: (original: () => any) => {
       const res = original();
       if (res !== null) {
@@ -272,6 +317,9 @@ function setChart(): void {
       ),
       date: timeToDate(candlesForChart.value[candles.value.length - 1].time),
     };
+    if (location.hash !== "") {
+      location.hash = "volume";
+    }
   } else if (currentChart.value === 2) {
     recreateChart();
     areaSeries.value.setData(balancesForChart.value);
@@ -283,6 +331,7 @@ function setChart(): void {
         balancesForChart.value[balancesForChart.value.length - 1].time
       ),
     };
+    location.hash = "tvl";
   } else if (currentChart.value === 3) {
     recreateChart();
     areaSeries.value.setData(prices0ForChart.value);
@@ -294,6 +343,7 @@ function setChart(): void {
         prices0ForChart.value[prices0ForChart.value.length - 1].time
       ),
     };
+    location.hash = "asset1";
   } else if (currentChart.value === 4) {
     recreateChart();
     areaSeries.value.setData(prices1ForChart.value);
@@ -305,6 +355,7 @@ function setChart(): void {
         prices1ForChart.value[prices1ForChart.value.length - 1].time
       ),
     };
+    location.hash = "asset2";
   }
 
   c.value.timeScale().fitContent();
@@ -355,6 +406,7 @@ const columns = computed(() => {
       title: "Author",
       dataIndex: "author",
       key: "author",
+      slots: { customRender: "author" },
     },
     {
       title: "Date",
@@ -366,8 +418,6 @@ const columns = computed(() => {
 
 const data = computed(() => {
   if (!pool.value.history?.length) return [];
-
-  console.log("h", pool.value.history[0]);
 
   const baseSymbol = pool.value.getSymbol(
     pool.value.history[0].base_asset,
@@ -412,7 +462,7 @@ const data = computed(() => {
         asset1Amount,
         poolsData.value.assets[item.quote_asset]
       ),
-      date: new Date(item.timestamp).toLocaleDateString('en-ZA'),
+      date: new Date(item.timestamp).toLocaleDateString("en-ZA"),
     };
   });
 });
@@ -429,11 +479,18 @@ watch(
 watch([chart, candles], fillChart);
 watch(currentChart, setChart);
 onMounted(updatePool);
-onUnmounted(() => window.removeEventListener("resize", resize));
+onUnmounted(() => {
+  window.removeEventListener("resize", resize);
+  window.removeEventListener("mousemove", setMousePosition);
+});
 </script>
 
 <template>
   <Menu />
+  <div id="toolTip">
+    <div id="ttAmount"></div>
+    <div id="ttDate"></div>
+  </div>
   <div v-if="!isReady" style="text-align: center"><a-spin size="large" /></div>
   <div v-if="isReady && pool.ready">
     <div
@@ -496,14 +553,20 @@ onUnmounted(() => window.removeEventListener("resize", resize));
             <div class="titleInBlock">Volume 24H</div>
             <div class="contentInBlock">
               ${{
-                pool.get24hVolumeInUSD(tickers, poolsData.assets, exchangeRates)
+                formatPrice(
+                  pool.get24hVolumeInUSD(
+                    tickers,
+                    poolsData.assets,
+                    exchangeRates
+                  )
+                )
               }}
             </div>
           </div>
           <div class="block">
             <div class="titleInBlock">TVL</div>
             <div class="contentInBlock">
-              ${{ Number(pool.marketcap.toFixed(2)) }}
+              ${{ formatPrice(Number(pool.marketcap.toFixed(2))) }}
             </div>
           </div>
           <div class="block">
@@ -538,7 +601,12 @@ onUnmounted(() => window.removeEventListener("resize", resize));
                     >
                   </a-radio-group>
                 </a-col>
-                <a-col :xs="24" :sm="24" :xl="8" style="text-align: right">
+                <a-col
+                  :xs="24"
+                  :sm="24"
+                  :xl="8"
+                  style="text-align: right; height: 44px"
+                >
                   <div style="font-weight: bold; font-size: 16px">
                     {{ priceAndDate.price }}
                   </div>
@@ -569,6 +637,15 @@ onUnmounted(() => window.removeEventListener("resize", resize));
               target="_blank"
               :href="`https://explorer.obyte.org/#${record.unit}`"
               >{{ record.type }}</a
+            >
+          </span>
+        </template>
+        <template #author="{ record }">
+          <span>
+            <a
+              target="_blank"
+              :href="`https://explorer.obyte.org/#${record.author}`"
+              >{{ record.author }}</a
             >
           </span>
         </template>
@@ -623,5 +700,24 @@ onUnmounted(() => window.removeEventListener("resize", resize));
 
 .ant-radio-button-wrapper:last-child {
   border-radius: 0 8px 8px 0 !important;
+}
+
+#toolTip {
+  display: none;
+  position: absolute;
+  padding: 8px;
+  color: #fff;
+  z-index: 9999999;
+  background-color: rgb(19, 21, 25);
+  border-radius: 8px;
+}
+
+#ttAmount {
+  font-size: 18px;
+}
+
+#ttDate {
+  margin-top: 4px;
+  font-size: 11px;
 }
 </style>
