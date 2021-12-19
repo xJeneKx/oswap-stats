@@ -61,6 +61,27 @@ function setMousePosition(event: MouseEvent): void {
   mousePosition = { x: event.pageX, y: event.pageY };
 }
 
+function hashChanged() {
+  switch (location.hash) {
+    case "#volume":
+      currentChart.value = 1;
+      break;
+    case "#tvl":
+      currentChart.value = 2;
+      break;
+    case "#asset1":
+      currentChart.value = 3;
+      break;
+    case "#asset2":
+      currentChart.value = 4;
+      break;
+    default:
+      currentChart.value = 1;
+      break;
+  }
+  setChart();
+}
+
 async function updatePool() {
   if (!isReady.value) return;
   pool.value = poolsData.value.pools.find((p: Pool) => {
@@ -76,11 +97,13 @@ async function updatePool() {
   candlesForChart.value = candles.value.map((v) => {
     return {
       time: v.start_timestamp.split("T")[0],
-      value: getVolumeInUSDHelper(
-        pool.value.asset0,
-        pool.value.asset1,
-        v,
-        exchangeRates
+      value: Number(
+        getVolumeInUSDHelper(
+          pool.value.asset0,
+          pool.value.asset1,
+          v,
+          exchangeRates
+        ).toFixed(2)
       ),
     };
   });
@@ -110,24 +133,11 @@ async function updatePool() {
       value: balances[1],
     });
   });
-  window.addEventListener("resize", resize);
-  window.addEventListener("mousemove", setMousePosition);
+  window.addEventListener("resize", resize, false);
+  window.addEventListener("mousemove", setMousePosition, false);
+  window.addEventListener("hashchange", hashChanged, false);
   resize();
-  switch (location.hash) {
-    case "#volume":
-      currentChart.value = 1;
-      break;
-    case "#tvl":
-      currentChart.value = 2;
-      break;
-    case "#asset1":
-      currentChart.value = 3;
-      break;
-    case "#asset2":
-      currentChart.value = 4;
-      break;
-  }
-  setChart();
+  hashChanged();
 }
 
 function timeToDate(time: any): string {
@@ -151,7 +161,14 @@ function getPriceText(amount: number) {
   return 0;
 }
 
-function formatPrice(n: number) {
+function formatPrice(n: number, isChart: boolean) {
+  if (isChart) {
+    if (currentChart.value === 3) {
+      return Number(n.toFixed(pool.value.asset1_decimals));
+    } else if (currentChart.value === 4) {
+      return Number(n.toFixed(pool.value.asset0_decimals));
+    }
+  }
   if (n < 1e3) return n.toFixed(2);
   if (n >= 1e3 && n < 1e6) return +(n / 1e3).toFixed(2) + "k";
   if (n >= 1e6 && n < 1e9) return +(n / 1e6).toFixed(2) + "M";
@@ -267,7 +284,7 @@ function fillChart() {
     priceFormat: {
       type: "custom",
       formatter: (price: number) => {
-        return formatPrice(price);
+        return formatPrice(price, true);
       },
     },
     priceScale: {
@@ -294,7 +311,7 @@ function recreateChart(): void {
     priceFormat: {
       type: "custom",
       formatter: (price: number) => {
-        return formatPrice(price);
+        return formatPrice(price, true);
       },
     },
     autoscaleInfoProvider: (original: () => any) => {
@@ -482,6 +499,7 @@ onMounted(updatePool);
 onUnmounted(() => {
   window.removeEventListener("resize", resize);
   window.removeEventListener("mousemove", setMousePosition);
+  window.removeEventListener("hashchange", hashChanged);
 });
 </script>
 
