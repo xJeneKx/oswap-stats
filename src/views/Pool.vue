@@ -648,6 +648,7 @@ onUnmounted(() => {
         :dataSource="data"
         :columns="columns"
         :rowClassName="(record, index) => 'table-pointer'"
+        :scroll="{ x: true }"
       >
         <template #type="{ record }">
           <span>
