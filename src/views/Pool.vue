@@ -15,6 +15,8 @@ import Menu from "@/components/Menu.vue";
 import useWindowSize from "@/composables/useWindowSize";
 import { addZero } from "@/helpers/date.helper";
 
+import { InfoCircleOutlined } from "@ant-design/icons-vue";
+
 const Client = inject("Obyte") as Obyte.Client;
 const store = useStore();
 const route = useRoute();
@@ -588,7 +590,13 @@ onUnmounted(() => {
             </div>
           </div>
           <div class="block">
-            <div class="titleInBlock">APY 7D</div>
+            <div class="titleInBlock">
+              APY
+              <a-tooltip>
+                <template #title>Based on the last 7 days</template>
+                <InfoCircleOutlined />
+              </a-tooltip>
+            </div>
             <div class="contentInBlock">
               {{ pool.getAPY7d(candles, exchangeRates) }}%
             </div>
