@@ -146,7 +146,7 @@ function timeToDate(time: any): string {
 
 function getPriceText(amount: number) {
   if (currentChart.value === 1 || currentChart.value === 2) {
-    return "$" + Math.round(amount * 100) / 100;
+    return "$" + formatPrice(Math.round(amount * 100) / 100);
   } else if (currentChart.value === 3) {
     return `${amount} ${pool.value.getTicker(
       pool.value.asset0,
@@ -161,7 +161,7 @@ function getPriceText(amount: number) {
   return 0;
 }
 
-function formatPrice(n: number, isChart: boolean) {
+function formatPrice(n: number, isChart?: boolean) {
   if (isChart) {
     if (currentChart.value === 3) {
       return Number(n.toFixed(pool.value.asset1_decimals));
