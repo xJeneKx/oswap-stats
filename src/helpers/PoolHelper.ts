@@ -299,17 +299,16 @@ export default class Pool {
       type = "base";
       rate = exchangeRates[`${asset}_USD`];
     }
-    const APY7D = candlesLast7d.map((c: ICandles) => {
-      const volume = type === "quote" ? c.quote_volume : c.base_volume;
-      const inUSD = volume * rate;
-      return ((inUSD * fee) / this.marketcap) * 365;
-    });
+    const earning7d = candlesLast7d
+      .map((c: ICandles) => {
+        const volume = type === "quote" ? c.quote_volume : c.base_volume;
+        const inUSD = volume * rate;
+        return inUSD * fee;
+      })
+      .reduce((prev, curr) => prev + curr, 0);
 
-    const avgAPY =
-      APY7D.reduce((prev: number, curr: number): number => {
-        return prev + curr;
-      }, 0) / 7;
+    const apy = (1 + earning7d / this.marketcap) ** (365 / 7) - 1;
 
-    return Number((avgAPY * 100).toFixed(2)) || 0;
+    return Number((apy * 100).toFixed(2)) || 0;
   }
 }
