@@ -69,11 +69,6 @@ const columns = computed(() => {
   const key = sortedInfo.value.columnKey;
   return [
     {
-      title: "#",
-      dataIndex: "n",
-      key: "n",
-    },
-    {
       title: "Pool",
       dataIndex: "pool",
       key: "pool",
@@ -107,23 +102,35 @@ const columns = computed(() => {
   ];
 });
 
-const mobileColumns = ref([
-  {
-    title: "Pool",
-    dataIndex: "pool",
-    key: "pool",
-    slots: { customRender: "pool" },
-  },
-  {
-    title: "TVL",
-    dataIndex: "TVL",
-    key: "tvl",
-    defaultSortOrder: "descend",
-    sortDirections: ["descend"],
-    sorter: (a: any, b: any) => a.TVL - b.TVL,
-    slots: { customRender: "TVL" },
-  },
-]);
+const mobileColumns = computed(() => {
+  const key = sortedInfo.value.columnKey;
+  return [
+    {
+      title: "Pool",
+      dataIndex: "pool",
+      key: "pool",
+      slots: { customRender: "pool" },
+    },
+    {
+      title: "TVL",
+      dataIndex: "TVL",
+      key: "tvl",
+      sortDirections: ["descend"],
+      sorter: (a: any, b: any) => a.TVLString - b.TVLString,
+      sortOrder: key === "tvl" && "descend",
+      slots: { customRender: "TVL" },
+    },
+    {
+      title: "APY",
+      dataIndex: "APY",
+      key: "APY",
+      sortDirections: ["descend"],
+      sorter: (a: any, b: any) => a.APY - b.APY,
+      sortOrder: key === "APY" && "descend",
+      slots: { customRender: "APY" },
+    },
+  ];
+});
 
 const data = computed(() => {
   return poolsData.value.pools.map((pool: Pool, index: number) => {
@@ -139,7 +146,6 @@ const data = computed(() => {
 
     return {
       key: pool.address,
-      n: index + 1,
       pool: {
         name: pool.ticker,
         fee: pool.swapFee / 1000000000,
@@ -163,6 +169,7 @@ const mobileData = computed(() => {
         fee: pool.swapFee / 1000000000,
         address: pool.address,
       },
+      APY: apy7d.value[pool.tickerForApi] || 0,
       TVL: Number(pool.marketcap.toFixed(2)),
     };
   });

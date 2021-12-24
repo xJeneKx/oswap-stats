@@ -3,6 +3,7 @@ import { computed, inject, ref, watch, onMounted, Ref, onUnmounted } from "vue";
 import { useStore } from "vuex";
 import { useRoute } from "vue-router";
 import { createChart } from "lightweight-charts";
+import { DateTime } from "luxon";
 import { getVolumeInUSDHelper } from "@/helpers/volumeInUSD.helper";
 import Obyte from "@/obyte";
 import Pool from "@/helpers/PoolHelper";
@@ -190,6 +191,7 @@ function fillChart() {
       },
       rightPriceScale: {
         visible: true,
+        scaleMargins: { bottom: 0.01, top: 0.2 },
       },
       leftPriceScale: {
         visible: false,
@@ -303,13 +305,14 @@ function fillChart() {
   resize();
 }
 
-function recreateChart(): void {
+function recreateChart(priceLineVisible: boolean): void {
   c.value.removeSeries(areaSeries.value);
   areaSeries.value = c.value.addAreaSeries({
     topColor: "rgba(23, 125, 220, 0.5)",
     lineColor: "rgba(23, 125, 220, 1)",
     bottomColor: "rgba(23, 125, 220, 0)",
     lineWidth: 2,
+    priceLineVisible: priceLineVisible,
     priceFormat: {
       type: "custom",
       formatter: (price: number) => {
@@ -328,7 +331,7 @@ function recreateChart(): void {
 
 function setChart(): void {
   if (currentChart.value === 1) {
-    recreateChart();
+    recreateChart(true);
     areaSeries.value.setData(candlesForChart.value);
     priceAndDate.value = {
       price: getPriceText(
@@ -340,7 +343,7 @@ function setChart(): void {
       location.hash = "volume";
     }
   } else if (currentChart.value === 2) {
-    recreateChart();
+    recreateChart(true);
     areaSeries.value.setData(balancesForChart.value);
     priceAndDate.value = {
       price: getPriceText(
@@ -352,7 +355,7 @@ function setChart(): void {
     };
     location.hash = "tvl";
   } else if (currentChart.value === 3) {
-    recreateChart();
+    recreateChart(false);
     areaSeries.value.setData(prices0ForChart.value);
     priceAndDate.value = {
       price: getPriceText(
@@ -364,7 +367,7 @@ function setChart(): void {
     };
     location.hash = "asset1";
   } else if (currentChart.value === 4) {
-    recreateChart();
+    recreateChart(false);
     areaSeries.value.setData(prices1ForChart.value);
     priceAndDate.value = {
       price: getPriceText(
@@ -378,13 +381,6 @@ function setChart(): void {
   }
 
   c.value.timeScale().fitContent();
-}
-
-function goToOswapIO(): void {
-  const a = document.createElement("a");
-  a.href = "https://oswap.io/#/add-liquidity/" + pool.value.address;
-  a.target = "_blank";
-  a.click();
 }
 
 const columns = computed(() => {
@@ -481,7 +477,7 @@ const data = computed(() => {
         asset1Amount,
         poolsData.value.assets[item.quote_asset]
       ),
-      date: new Date(item.timestamp).toLocaleDateString("en-ZA"),
+      date: DateTime.fromISO(item.timestamp).toFormat("yyyy/LL/dd HH:mm:ss"),
     };
   });
 });
@@ -517,17 +513,44 @@ onUnmounted(() => {
       style="max-width: 1200px; width: 90%; margin: 16px auto; padding: 0 16px"
     >
       <div style="margin: 8px">
-        <div>
-          <span style="font-size: 24px; color: #fff">{{ pool.ticker }}</span>
-          <a-tag class="tag fee">{{ pool.swapFee / 1000000000 }}%</a-tag>
-          <a-button
-            type="primary"
-            size="large"
-            style="border-radius: 8px; float: right; margin-top: 2px"
-            @click="goToOswapIO"
-            >Add liquidity</a-button
+        <a-row>
+          <a-col :xs="24" :sm="24" :md="12">
+            <span style="font-size: 24px; color: #fff">{{ pool.ticker }}</span>
+            <a-tag class="tag fee">{{ pool.swapFee / 1000000000 }}%</a-tag>
+          </a-col>
+          <a-col
+            :xs="24"
+            :sm="24"
+            :md="12"
+            :style="{
+              textAlign: isMobile ? 'left' : 'right',
+              marginTop: isMobile ? '4px' : '0px',
+            }"
           >
-        </div>
+            <a
+              :href="'https://oswap.io/#/add-liquidity/' + pool.address"
+              target="_blank"
+            >
+              <a-button
+                type="primary"
+                size="large"
+                style="border-radius: 8px; margin-top: 2px"
+                >Add liquidity</a-button
+              >
+            </a>
+            <a
+              :href="'https://oswap.io/#/swap/' + pool.address"
+              target="_blank"
+            >
+              <a-button
+                type="primary"
+                size="large"
+                style="border-radius: 8px; margin-top: 2px; margin-left: 16px"
+                >Trade</a-button
+              >
+            </a>
+          </a-col>
+        </a-row>
         <div v-if="pool.hasLiquidity()" style="margin-top: 16px">
           <div
             :style="
@@ -718,6 +741,10 @@ onUnmounted(() => {
   justify-content: center;
   font-size: 16px;
 }
+
+.table {
+  padding: 0 16px 0 8px;
+}
 </style>
 
 <style>
@@ -746,5 +773,11 @@ onUnmounted(() => {
 #ttDate {
   margin-top: 4px;
   font-size: 11px;
+}
+
+@media screen and (max-width: 600px) {
+  .fee {
+    display: inline-block !important;
+  }
 }
 </style>

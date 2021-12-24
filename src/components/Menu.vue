@@ -17,13 +17,6 @@ function goToHome() {
     name: "Home",
   });
 }
-
-function goToSwap(): void {
-  const a = document.createElement("a");
-  a.href = "https://oswap.io";
-  a.target = "_blank";
-  a.click();
-}
 </script>
 
 <template>
@@ -37,8 +30,8 @@ function goToSwap(): void {
         />
       </div>
       <div class="menu-items">
-        <span :class="isHome ? 'active' : ''" @click="goToHome">Pools</span>
-        <span @click="goToSwap">Swap</span>
+        <a :class="isHome ? 'active' : ''" @click="goToHome">Pools</a>
+        <a href="https://oswap.io" target="_blank">Swap</a>
       </div>
     </div>
   </div>
@@ -59,15 +52,15 @@ function goToSwap(): void {
   margin-left: 24px;
 }
 
-.menu-items > span {
+.menu-items > a {
   height: 36px;
   color: #545e69;
   padding: 4px 20px;
   margin-left: 16px;
 }
 
-.menu-items > span.active,
-.menu-items > span:hover {
+.menu-items > a.active,
+.menu-items > a:hover {
   color: #fff;
   cursor: pointer;
   border-bottom: 2px solid #fff;
