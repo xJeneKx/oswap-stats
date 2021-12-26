@@ -331,7 +331,7 @@ function recreateChart(priceLineVisible: boolean): void {
 
 function setChart(): void {
   if (currentChart.value === 1) {
-    recreateChart(true);
+    recreateChart(false);
     areaSeries.value.setData(candlesForChart.value);
     priceAndDate.value = {
       price: getPriceText(
@@ -343,7 +343,7 @@ function setChart(): void {
       location.hash = "volume";
     }
   } else if (currentChart.value === 2) {
-    recreateChart(true);
+    recreateChart(false);
     areaSeries.value.setData(balancesForChart.value);
     priceAndDate.value = {
       price: getPriceText(
@@ -355,7 +355,7 @@ function setChart(): void {
     };
     location.hash = "tvl";
   } else if (currentChart.value === 3) {
-    recreateChart(false);
+    recreateChart(true);
     areaSeries.value.setData(prices0ForChart.value);
     priceAndDate.value = {
       price: getPriceText(
@@ -367,7 +367,7 @@ function setChart(): void {
     };
     location.hash = "asset1";
   } else if (currentChart.value === 4) {
-    recreateChart(false);
+    recreateChart(true);
     areaSeries.value.setData(prices1ForChart.value);
     priceAndDate.value = {
       price: getPriceText(
@@ -541,6 +541,7 @@ onUnmounted(() => {
             <a
               :href="'https://oswap.io/#/swap/' + pool.address"
               target="_blank"
+              style="margin-right: 8px"
             >
               <a-button
                 type="primary"

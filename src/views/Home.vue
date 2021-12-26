@@ -133,7 +133,7 @@ const mobileColumns = computed(() => {
 });
 
 const data = computed(() => {
-  return poolsData.value.pools.map((pool: Pool, index: number) => {
+  return poolsData.value.pools.map((pool: Pool) => {
     const TVL = Number(pool.marketcap.toFixed(2));
     const TVLString = formatNumbers(TVL);
 
