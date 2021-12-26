@@ -247,44 +247,16 @@ export default class Pool {
     const ticker = tickers[this.getTickerForAPI(assets)];
     if (!ticker) return 0;
 
-    let assetValue0 = 0;
-    let assetValue1 = 0;
+    let volumeInUSD = 0;
     const assetId0 = ticker.base_id === "base" ? "GBYTE" : ticker.base_id;
     const assetId1 = ticker.quote_id === "base" ? "GBYTE" : ticker.quote_id;
-    assetValue0 = exchangeRates[`${assetId0}_USD`]
-      ? exchangeRates[`${assetId0}_USD`] * ticker.base_volume
-      : 0;
-    assetValue1 = exchangeRates[`${assetId1}_USD`]
-      ? exchangeRates[`${assetId1}_USD`] * ticker.quote_volume
-      : 0;
-
-    return assetValue0 && assetValue1
-      ? Number((assetValue0 + assetValue1).toFixed(2))
-      : 0;
-  }
-
-  get24hAPY(
-    tickers: ITickers,
-    assets: IAssetsList,
-    exchangeRates: Ref<IExchangeRates>
-  ): number {
-    const ticker = tickers[this.getTickerForAPI(assets)];
-    if (!ticker) return 0;
-
-    const fee = this.swapFee / 10 ** 11;
-    let asset = this.asset0;
-    let type = "quote";
-    let rate = exchangeRates.value[`${asset}_USD`];
-    if (!rate) {
-      asset = this.asset1;
-      type = "base";
-      rate = exchangeRates.value[`${asset}_USD`];
+    if (exchangeRates[`${assetId0}_USD`]) {
+      volumeInUSD = exchangeRates[`${assetId0}_USD`] * ticker.base_volume;
+    } else if (exchangeRates[`${assetId1}_USD`]) {
+      volumeInUSD = exchangeRates[`${assetId1}_USD`] * ticker.quote_volume;
     }
 
-    const volume = type === "quote" ? ticker.quote_volume : ticker.base_volume;
-    const inUSD = volume * rate;
-    const APY = ((inUSD * fee) / this.marketcap) * 365;
-    return Number((APY * 100).toFixed(2)) || 0;
+    return Number(volumeInUSD.toFixed(2));
   }
 
   getAPY7d(candles: ICandles[], exchangeRates: IExchangeRates): number {
