@@ -12,25 +12,27 @@ defineProps({
 
 const router = useRouter();
 
-function goToHome() {
+function goToHome(e: Event) {
+  e.preventDefault();
   router.push({
     name: "Home",
   });
+  return false;
 }
 </script>
 
 <template>
   <div class="menu">
     <div style="display: flex">
-      <div style="cursor: pointer" @click="goToHome">
+      <a href="/" @click="goToHome">
         <img
           src="https://oswap.io/img/logo.4fab4f31.svg"
           width="36"
           alt="logo"
         />
-      </div>
+      </a>
       <div class="menu-items">
-        <a :class="isHome ? 'active' : ''" @click="goToHome">Pools</a>
+        <a href="/" :class="isHome ? 'active' : ''" @click="goToHome">Pools</a>
         <a href="https://oswap.io" target="_blank">Swap</a>
       </div>
     </div>

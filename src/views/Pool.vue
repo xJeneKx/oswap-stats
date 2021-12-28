@@ -17,6 +17,7 @@ import useWindowSize from "@/composables/useWindowSize";
 import { addZero } from "@/helpers/date.helper";
 
 import { InfoCircleOutlined } from "@ant-design/icons-vue";
+import Footer from "@/components/Footer.vue";
 
 const Client = inject("Obyte") as Obyte.Client;
 const store = useStore();
@@ -701,6 +702,7 @@ onUnmounted(() => {
           </span>
         </template>
       </a-table>
+      <Footer />
     </div>
   </div>
 </template>

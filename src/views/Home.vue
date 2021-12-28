@@ -6,6 +6,7 @@ import Obyte from "@/obyte";
 import Pool from "@/helpers/PoolHelper";
 import { ITickers } from "@/interfaces/tickers.interface";
 import Menu from "@/components/Menu.vue";
+import Footer from "@/components/Footer.vue";
 import useWindowSize from "@/composables/useWindowSize";
 import fetchAPY7Days from "@/api/fetchAPY7Days";
 import {
@@ -239,6 +240,7 @@ const handleChange = (
         <template #APY="{ text }">{{ text }}%</template>
         <template #volume="{ text }">${{ text }}</template>
       </a-table>
+      <Footer />
     </div>
   </div>
 </template>

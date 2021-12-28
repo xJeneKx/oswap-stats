@@ -1,4 +1,3 @@
-import { Ref } from "vue";
 import fetchAAInfo from "@/api/fetchAAInfo";
 import Obyte from "@/obyte";
 import { IAssetsList, IAsset } from "@/interfaces/assets.interface";
