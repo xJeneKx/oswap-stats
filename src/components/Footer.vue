@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { defineProps, ref } from "vue";
+import { defineProps } from "vue";
 
 defineProps({
   isHome: {
@@ -13,7 +13,7 @@ defineProps({
 <template>
   <div class="footer" :class="isHome ? '' : 'notHome'">
     The displayed APY does not include the rewards from
-    <a href="https://liquidity.obyte.org" target="_blank">liquidity mining</a>
+    <a href="https://liquidity.obyte.org" target="_blank">liquidity mining</a>.
   </div>
 </template>
 
@@ -24,7 +24,7 @@ defineProps({
 }
 
 .notHome {
-  padding-left: 10px;
-  padding-right: 10px;
+  padding-left: 8px;
+  padding-right: 8px;
 }
 </style>

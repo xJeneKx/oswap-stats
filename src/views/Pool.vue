@@ -522,7 +522,7 @@ onUnmounted(() => {
   <div v-if="!isReady" style="text-align: center"><a-spin size="large" /></div>
   <div v-if="isReady && pool.ready">
     <div
-      style="max-width: 1200px; width: 90%; margin: 16px auto; padding: 0 16px"
+      style="max-width: 1200px; width: 90%; margin: 16px auto; padding: 0 8px"
     >
       <div style="margin: 8px">
         <a-row>
