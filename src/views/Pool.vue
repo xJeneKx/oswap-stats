@@ -759,6 +759,11 @@ onUnmounted(() => {
 .table {
   padding: 0 16px 0 8px;
 }
+@media screen and (max-width: 600px) {
+  .fee {
+    display: inline-block !important;
+  }
+}
 </style>
 
 <style>
@@ -787,11 +792,5 @@ onUnmounted(() => {
 #ttDate {
   margin-top: 4px;
   font-size: 11px;
-}
-
-@media screen and (max-width: 600px) {
-  .fee {
-    display: inline-block !important;
-  }
 }
 </style>
