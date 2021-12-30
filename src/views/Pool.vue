@@ -553,7 +553,6 @@ onUnmounted(() => {
             <a
               :href="'https://oswap.io/#/swap/' + pool.address"
               target="_blank"
-              style="margin-right: 8px"
             >
               <a-button
                 type="primary"
@@ -640,7 +639,11 @@ onUnmounted(() => {
         </a-col>
         <a-col :xs="24" :sm="24" :md="18">
           <div
-            style="margin: 16px; background-color: #1c2024; border-radius: 8px"
+            style="
+              margin: 16px 8px;
+              background-color: #1c2024;
+              border-radius: 8px;
+            "
           >
             <div style="padding: 16px">
               <a-row>
@@ -757,7 +760,7 @@ onUnmounted(() => {
 }
 
 .table {
-  padding: 0 16px 0 8px;
+  padding: 0 8px;
 }
 @media screen and (max-width: 600px) {
   .fee {
