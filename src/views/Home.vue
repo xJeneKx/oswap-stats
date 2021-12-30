@@ -240,7 +240,7 @@ const handleChange = (
         <template #APY="{ text }">{{ text }}%</template>
         <template #volume="{ text }">${{ text }}</template>
       </a-table>
-      <Footer />
+      <Footer :isHome="true" />
     </div>
   </div>
 </template>

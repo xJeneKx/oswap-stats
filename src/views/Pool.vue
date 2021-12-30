@@ -192,7 +192,6 @@ function fillChart() {
       },
       rightPriceScale: {
         visible: true,
-        scaleMargins: { bottom: 0.01, top: 0.2 },
       },
       leftPriceScale: {
         visible: false,
@@ -296,6 +295,12 @@ function fillChart() {
       autoScale: true,
     },
   });
+  areaSeries.value.createPriceLine({
+    price: 0,
+    color: "red",
+    axisLabelVisible: false,
+    lineStyle: 1,
+  });
 
   areaSeries.value.setData(candlesForChart.value);
   const time = candlesForChart.value[candlesForChart.value.length - 1].time;
@@ -327,6 +332,12 @@ function recreateChart(priceLineVisible: boolean): void {
       }
       return res;
     },
+  });
+  areaSeries.value.createPriceLine({
+    price: 0,
+    color: "rgba(22,125,218,0.7)",
+    axisLabelVisible: false,
+    lineStyle: 1,
   });
 }
 
