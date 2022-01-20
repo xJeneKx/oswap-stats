@@ -114,7 +114,7 @@ async function updatePool() {
   const balances = await fetchBalancesForLast60Days(pool.value.address);
   balancesForChart.value = balances.map((b) => {
     return {
-      time: b.creation_date.split(" ")[0],
+      time: b.balance_date.split(" ")[0],
       value: Number(
         pool.value
           .getMarketcapByBalances(
@@ -129,11 +129,11 @@ async function updatePool() {
   balances.forEach((b) => {
     const balances = pool.value.getPricesByBalances(b, poolsData.value.assets);
     prices0ForChart.value.push({
-      time: b.creation_date.split(" ")[0],
+      time: b.balance_date.split(" ")[0],
       value: balances[0],
     });
     prices1ForChart.value.push({
-      time: b.creation_date.split(" ")[0],
+      time: b.balance_date.split(" ")[0],
       value: balances[1],
     });
   });
