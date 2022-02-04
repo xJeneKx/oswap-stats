@@ -141,7 +141,8 @@ const data = computed(() => {
     const volume = pool.get24hVolumeInUSD(
       tickers.value,
       poolsData.value.assets,
-      exchangeRates.value
+      exchangeRates.value,
+      pool.address
     );
     const volumeString = formatNumbers(volume);
 
@@ -154,7 +155,7 @@ const data = computed(() => {
       },
       TVL,
       TVLString,
-      APY: apy7d.value[pool.tickerForApi] || 0,
+      APY: apy7d.value[pool.address] || 0,
       volume,
       volumeString,
     };
@@ -170,7 +171,7 @@ const mobileData = computed(() => {
         fee: pool.swapFee / 1000000000,
         address: pool.address,
       },
-      APY: apy7d.value[pool.tickerForApi] || 0,
+      APY: apy7d.value[pool.address] || 0,
       TVL: Number(pool.marketcap.toFixed(2)),
     };
   });

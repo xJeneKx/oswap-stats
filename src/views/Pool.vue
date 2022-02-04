@@ -96,7 +96,7 @@ async function updatePool() {
 
   const { assets } = poolsData.value;
   candles.value = await fetchCandlesForLast60Days(
-    pool.value.getTickerForAPI(assets)
+    pool.value.address + "-" + pool.value.getTickerForAPI(assets)
   );
   candlesForChart.value = candles.value.map((v) => {
     return {
@@ -612,7 +612,8 @@ onUnmounted(() => {
                   pool.get24hVolumeInUSD(
                     tickers,
                     poolsData.assets,
-                    exchangeRates
+                    exchangeRates,
+                    pool.address
                   )
                 )
               }}

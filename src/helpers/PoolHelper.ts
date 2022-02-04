@@ -241,9 +241,10 @@ export default class Pool {
   get24hVolumeInUSD(
     tickers: ITickers,
     assets: IAssetsList,
-    exchangeRates: IExchangeRates
+    exchangeRates: IExchangeRates,
+    address: string
   ): number {
-    const ticker = tickers[this.getTickerForAPI(assets)];
+    const ticker = tickers[address + "-" + this.getTickerForAPI(assets)];
     if (!ticker) return 0;
 
     let volumeInUSD = 0;
