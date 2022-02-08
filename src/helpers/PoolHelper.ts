@@ -260,8 +260,9 @@ export default class Pool {
   }
 
   getAPY7d(candles: ICandles[], exchangeRates: IExchangeRates): number {
-    if (candles.length < 7) return 0;
-    const candlesLast7d = candles.slice(-7);
+    const l = candles.length;
+    if (l < 7) return 0;
+    const candlesLast7d = candles.slice(l - 8, l - 1);
     const fee = this.swapFee / 10 ** 11;
     let asset = this.asset0 === "base" ? "GBYTE" : this.asset0;
     let type = "quote";
@@ -279,6 +280,7 @@ export default class Pool {
       })
       .reduce((prev, curr) => prev + curr, 0);
 
+    console.log("e", earning7d, this.marketcap);
     const apy = (1 + earning7d / this.marketcap) ** (365 / 7) - 1;
 
     return Number((apy * 100).toFixed(2)) || 0;
