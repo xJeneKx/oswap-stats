@@ -38,6 +38,7 @@ const exchangeRates = computed(() => store.state.exchangeRates);
 const isReady = computed(() => store.state.ready);
 const poolsData = computed(() => store.state.poolsData);
 const tickers = computed(() => store.state.tickers);
+const apy7d = computed(() => store.state.apy7d);
 const isMobile = computed(() => windowSize.x.value < 576);
 const pool: Ref<Pool> = ref({} as Pool);
 const candles: Ref<ICandles[]> = ref([]);
@@ -47,11 +48,12 @@ const c = ref(null) as any;
 const areaSeries = ref() as any;
 const blockSize = ref(0);
 const priceAndDate = ref<any>({ price: 0 });
-const candlesForChart = ref([]) as Ref<IForChart[]>;
+const volumesForChart = ref([]) as Ref<IForChart[]>;
 const balancesForChart = ref([]) as Ref<IForChart[]>;
-const prices0ForChart = ref([]) as Ref<IForChart[]>;
-const prices1ForChart = ref([]) as Ref<IForChart[]>;
+const basePricesForChat = ref([]) as Ref<IForChart[]>;
+const quotePricesForChat = ref([]) as Ref<IForChart[]>;
 const currentChart = ref(1);
+const apyDetailsShown = ref(false);
 
 let mousePosition = { x: 0, y: 0 };
 
@@ -98,17 +100,29 @@ async function updatePool() {
   candles.value = await fetchCandlesForLast60Days(
     pool.value.address + "-" + pool.value.getTickerForAPI(assets)
   );
-  candlesForChart.value = candles.value.map((v) => {
+  volumesForChart.value = candles.value.map((v) => {
     return {
       time: v.start_timestamp.split("T")[0],
       value: Number(
         getVolumeInUSDHelper(
-          pool.value.asset0,
-          pool.value.asset1,
+          pool.value.y_asset,
+          pool.value.x_asset,
           v,
           exchangeRates
         ).toFixed(2)
       ),
+    };
+  });
+  basePricesForChat.value = candles.value.map((v) => {
+    return {
+      time: v.start_timestamp.split("T")[0],
+      value: +v.close_price.toPrecision(6),
+    };
+  });
+  quotePricesForChat.value = candles.value.map((v) => {
+    return {
+      time: v.start_timestamp.split("T")[0],
+      value: +(1 / v.close_price).toPrecision(6),
     };
   });
   const balances = await fetchBalancesForLast60Days(pool.value.address);
@@ -126,17 +140,6 @@ async function updatePool() {
       ),
     };
   });
-  balances.forEach((b) => {
-    const balances = pool.value.getPricesByBalances(b, poolsData.value.assets);
-    prices0ForChart.value.push({
-      time: b.balance_date.split(" ")[0],
-      value: balances[0],
-    });
-    prices1ForChart.value.push({
-      time: b.balance_date.split(" ")[0],
-      value: balances[1],
-    });
-  });
   window.addEventListener("resize", resize, false);
   window.addEventListener("mousemove", setMousePosition, false);
   window.addEventListener("hashchange", hashChanged, false);
@@ -153,14 +156,14 @@ function getPriceText(amount: number) {
     return "$" + formatPrice(Math.round(amount * 100) / 100);
   } else if (currentChart.value === 3) {
     return `${amount} ${pool.value.getTicker(
-      pool.value.asset0,
+      pool.value.y_asset,
       poolsData.value.assets
-    )}/${pool.value.getSymbol(pool.value.asset1, poolsData.value.assets)}`;
+    )}/${pool.value.getSymbol(pool.value.x_asset, poolsData.value.assets)}`;
   } else if (currentChart.value === 4) {
     return `${amount} ${pool.value.getSymbol(
-      pool.value.asset1,
+      pool.value.x_asset,
       poolsData.value.assets
-    )}/${pool.value.getTicker(pool.value.asset0, poolsData.value.assets)}`;
+    )}/${pool.value.getTicker(pool.value.y_asset, poolsData.value.assets)}`;
   }
   return 0;
 }
@@ -168,9 +171,9 @@ function getPriceText(amount: number) {
 function formatPrice(n: number, isChart?: boolean) {
   if (isChart) {
     if (currentChart.value === 3) {
-      return Number(n.toFixed(pool.value.asset1_decimals));
+      return Number(n.toFixed(pool.value.x_asset_decimals));
     } else if (currentChart.value === 4) {
-      return Number(n.toFixed(pool.value.asset0_decimals));
+      return Number(n.toFixed(pool.value.y_asset_decimals));
     }
   }
   if (n < 1e3) return n.toFixed(2);
@@ -234,19 +237,19 @@ function fillChart() {
     const ttAmount = document.getElementById("ttAmount") as HTMLElement;
     const ttDate = document.getElementById("ttDate") as HTMLElement;
     c.value.subscribeCrosshairMove(function (param: any) {
-      let chart = candlesForChart;
+      let chart = volumesForChart;
       switch (currentChart.value) {
         case 1:
-          chart = candlesForChart;
+          chart = volumesForChart;
           break;
         case 2:
           chart = balancesForChart;
           break;
         case 3:
-          chart = prices0ForChart;
+          chart = basePricesForChat;
           break;
         case 4:
-          chart = prices1ForChart;
+          chart = quotePricesForChat;
           break;
       }
       if (
@@ -302,10 +305,10 @@ function fillChart() {
     lineStyle: 1,
   });
 
-  areaSeries.value.setData(candlesForChart.value);
-  const time = candlesForChart.value[candlesForChart.value.length - 1].time;
+  areaSeries.value.setData(volumesForChart.value);
+  const time = volumesForChart.value[volumesForChart.value.length - 1].time;
   priceAndDate.value = {
-    price: getPriceText(candlesForChart.value[candles.value.length - 1].value),
+    price: getPriceText(volumesForChart.value[candles.value.length - 1].value),
     date: timeToDate(time),
   };
   resize();
@@ -344,12 +347,12 @@ function recreateChart(priceLineVisible: boolean): void {
 function setChart(): void {
   if (currentChart.value === 1) {
     recreateChart(false);
-    areaSeries.value.setData(candlesForChart.value);
+    areaSeries.value.setData(volumesForChart.value);
     priceAndDate.value = {
       price: getPriceText(
-        candlesForChart.value[candles.value.length - 1].value
+        volumesForChart.value[candles.value.length - 1].value
       ),
-      date: timeToDate(candlesForChart.value[candles.value.length - 1].time),
+      date: timeToDate(volumesForChart.value[candles.value.length - 1].time),
     };
     if (location.hash !== "") {
       location.hash = "volume";
@@ -368,25 +371,25 @@ function setChart(): void {
     location.hash = "tvl";
   } else if (currentChart.value === 3) {
     recreateChart(true);
-    areaSeries.value.setData(prices0ForChart.value);
+    areaSeries.value.setData(basePricesForChat.value);
     priceAndDate.value = {
       price: getPriceText(
-        prices0ForChart.value[prices0ForChart.value.length - 1].value
+        basePricesForChat.value[basePricesForChat.value.length - 1].value
       ),
       date: timeToDate(
-        prices0ForChart.value[prices0ForChart.value.length - 1].time
+        basePricesForChat.value[basePricesForChat.value.length - 1].time
       ),
     };
     location.hash = "asset1";
   } else if (currentChart.value === 4) {
     recreateChart(true);
-    areaSeries.value.setData(prices1ForChart.value);
+    areaSeries.value.setData(quotePricesForChat.value);
     priceAndDate.value = {
       price: getPriceText(
-        prices1ForChart.value[prices1ForChart.value.length - 1].value
+        quotePricesForChat.value[quotePricesForChat.value.length - 1].value
       ),
       date: timeToDate(
-        prices1ForChart.value[prices1ForChart.value.length - 1].time
+        quotePricesForChat.value[quotePricesForChat.value.length - 1].time
       ),
     };
     location.hash = "asset2";
@@ -403,11 +406,11 @@ const columns = computed(() => {
     ready = 0;
   } else {
     baseSymbol = pool.value.getSymbol(
-      pool.value.history[0].base_asset,
+      pool.value.x_asset,
       poolsData.value.assets
     );
     quoteSymbol = pool.value.getSymbol(
-      pool.value.history[0].quote_asset,
+      pool.value.y_asset,
       poolsData.value.assets
     );
   }
@@ -447,31 +450,42 @@ const data = computed(() => {
   if (!pool.value.history?.length) return [];
 
   const baseSymbol = pool.value.getSymbol(
-    pool.value.history[0].base_asset,
+    pool.value.x_asset,
     poolsData.value.assets
   );
   const quoteSymbol = pool.value.getSymbol(
-    pool.value.history[0].quote_asset,
+    pool.value.y_asset,
     poolsData.value.assets
   );
 
   const typeMap: ITypeMap = {
-    burn: "Burn",
-    mint: "Mint",
-    swap_in: `Swap ${quoteSymbol} to ${baseSymbol}`,
-    swap_out: `Swap ${baseSymbol} to ${quoteSymbol}`,
+    remove: "Remove",
+    add: "Add",
+    buy: `Swap ${quoteSymbol} to ${baseSymbol}`,
+    sell: `Swap ${baseSymbol} to ${quoteSymbol}`,
   };
   return pool.value.history.map((item: IHistory) => {
-    const type = typeMap[item.type];
+    const bLeverage = item.type === 'buy_leverage' || item.type === 'sell_leverage';
+    let type;
+    if (!bLeverage)
+      type = typeMap[item.type];
+    if (item.type === 'buy_leverage')
+      type = `Buy ${item.base_asset}`;
+    else if (item.type === 'sell_leverage')
+      type = `Sell ${item.base_asset}`;
 
-    let asset0Amount = 0,
-      asset1Amount = 0;
-    if (item.type === "swap_out") {
-      asset1Amount = item.base_qty;
-      asset0Amount = item.quote_qty;
-    } else {
-      asset0Amount = item.base_qty;
-      asset1Amount = item.quote_qty;
+    let baseAmount = item.base_qty;
+    let quoteAmount = item.quote_qty;
+
+    if (bLeverage) {
+      if (item.quote_asset === pool.value.x_asset) {
+        baseAmount = item.quote_qty;
+        quoteAmount = 0;
+      }
+      else if (item.quote_asset === pool.value.y_asset) {
+        baseAmount = 0;
+        quoteAmount = item.quote_qty;
+      }
     }
 
     return {
@@ -482,12 +496,12 @@ const data = computed(() => {
       base: baseSymbol,
       quote: quoteSymbol,
       baseAmount: pool.value.assetValue(
-        asset0Amount,
-        poolsData.value.assets[item.base_asset]
+        baseAmount,
+        poolsData.value.assets[pool.value.x_asset]
       ),
       quoteAmount: pool.value.assetValue(
-        asset1Amount,
-        poolsData.value.assets[item.quote_asset]
+        quoteAmount,
+        poolsData.value.assets[pool.value.y_asset]
       ),
       date: DateTime.fromISO(item.timestamp).toFormat("yyyy/LL/dd HH:mm:ss"),
     };
@@ -528,7 +542,7 @@ onUnmounted(() => {
         <a-row>
           <a-col :xs="24" :sm="24" :md="12">
             <span style="font-size: 24px; color: #fff">{{ pool.ticker }}</span>
-            <a-tag class="tag fee">{{ pool.swapFee / 1000000000 }}%</a-tag>
+            <a-tag class="tag fee">{{ pool.swapFee * 100 }}%</a-tag>
           </a-col>
           <a-col
             :xs="24"
@@ -540,7 +554,7 @@ onUnmounted(() => {
             }"
           >
             <a
-              :href="'https://oswap.io/#/add-liquidity/' + pool.address"
+              :href="'https://v2.oswap.io/#/add-liquidity/' + pool.address"
               target="_blank"
             >
               <a-button
@@ -551,7 +565,7 @@ onUnmounted(() => {
               >
             </a>
             <a
-              :href="'https://oswap.io/#/swap/' + pool.address"
+              :href="'https://v2.oswap.io/#/swap/' + pool.address"
               target="_blank"
             >
               <a-button
@@ -570,15 +584,15 @@ onUnmounted(() => {
             "
           >
             <span class="tag">
-              1 {{ pool.getTicker(pool.asset0, poolsData.assets) }} ≈
+              1 {{ pool.getTicker(pool.x_asset, poolsData.assets) }} ≈
               {{
                 pool.getFormattedPrice(
-                  pool.asset0,
-                  pool.asset1_decimals,
+                  pool.x_asset,
+                  pool.y_asset_decimals,
                   poolsData.assets
                 )
               }}
-              {{ pool.getSymbol(pool.asset1, poolsData.assets) }}
+              {{ pool.getSymbol(pool.y_asset, poolsData.assets) }}
             </span>
           </div>
           <div
@@ -589,15 +603,15 @@ onUnmounted(() => {
             "
           >
             <span class="tag">
-              1 {{ pool.getTicker(pool.asset1, poolsData.assets) }} ≈
+              1 {{ pool.getTicker(pool.y_asset, poolsData.assets) }} ≈
               {{
                 pool.getFormattedPrice(
-                  pool.asset1,
-                  pool.asset0_decimals,
+                  pool.y_asset,
+                  pool.x_asset_decimals,
                   poolsData.assets
                 )
               }}
-              {{ pool.getSymbol(pool.asset0, poolsData.assets) }}
+              {{ pool.getSymbol(pool.x_asset, poolsData.assets) }}
             </span>
           </div>
         </div>
@@ -634,7 +648,22 @@ onUnmounted(() => {
               </a-tooltip>
             </div>
             <div class="contentInBlock">
-              {{ pool.getAPY7d(candles, exchangeRates) }}%
+              {{ apy7d[pool.address].apy }}%
+            </div>
+            <div style="text-align: center" v-if="apyDetailsShown">
+              <div class="subTitleInBlock">7-day earnings</div>
+              <div>Swap fee: ${{ apy7d[pool.address].earnings7d.swap_fee.toFixed(2) }}</div>
+              <div>Arb profit tax: ${{ apy7d[pool.address].earnings7d.arb_profit_tax.toFixed(2) }}</div>
+              <div>Leverage tax: ${{ apy7d[pool.address].earnings7d.l_tax.toFixed(2) }}</div>
+              <div>Exit fee: ${{ apy7d[pool.address].earnings7d.exit_fee.toFixed(2) }}</div>
+              <div>Interest: ${{ apy7d[pool.address].earnings7d.interest.toFixed(2) }}</div>
+              <div style="font-weight: bold">Total: ${{ apy7d[pool.address].earnings7d.total.toFixed(2) }}</div>
+              <div>
+                <a @click="apyDetailsShown=false" class="detailsToggle">hide details</a>
+              </div>
+            </div>
+            <div style="text-align: center" v-else>
+              <a @click="apyDetailsShown=true" class="detailsToggle">show details</a>
             </div>
           </div>
         </a-col>
@@ -656,13 +685,13 @@ onUnmounted(() => {
                     <a-radio-button :value="1">Volume</a-radio-button>
                     <a-radio-button :value="2">TVL</a-radio-button>
                     <a-radio-button :value="3"
-                      >{{ pool.getTicker(pool.asset0, poolsData.assets) }}/{{
-                        pool.getSymbol(pool.asset1, poolsData.assets)
+                      >{{ pool.getTicker(pool.x_asset, poolsData.assets) }}/{{
+                        pool.getSymbol(pool.y_asset, poolsData.assets)
                       }}</a-radio-button
                     >
                     <a-radio-button :value="4"
-                      >{{ pool.getSymbol(pool.asset1, poolsData.assets) }}/{{
-                        pool.getTicker(pool.asset0, poolsData.assets)
+                      >{{ pool.getSymbol(pool.y_asset, poolsData.assets) }}/{{
+                        pool.getTicker(pool.x_asset, poolsData.assets)
                       }}</a-radio-button
                     >
                   </a-radio-group>
@@ -753,11 +782,26 @@ onUnmounted(() => {
   text-align: center;
 }
 
+.subTitleInBlock {
+  font-weight: bold;
+  font-size: 16px;
+  color: #6a737d;
+  margin-top: 12px;
+  margin-bottom: 6px;
+  text-align: center;
+}
+
 .contentInBlock {
   align-items: center;
   display: flex;
   justify-content: center;
   font-size: 16px;
+}
+
+.detailsToggle {
+  color: #6a737d;
+  text-decoration: underline dotted;
+  font-size: 12px;
 }
 
 .table {

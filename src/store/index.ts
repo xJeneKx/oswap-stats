@@ -3,6 +3,7 @@ import fetchInitialData from "@/api/fetchInitialData";
 import fetchPoolData from "@/api/fetchPoolData";
 import fetchTickers from "@/api/fetchTickers";
 import fetchExchangeRates from "@/api/fetchExchangeRates";
+import fetchAPY7Days from "@/api/fetchAPY7Days";
 
 export default createStore({
   state: {
@@ -10,6 +11,7 @@ export default createStore({
     poolsData: [],
     tickers: {},
     exchangeRates: {},
+    apy7d: {},
     ready: false,
   },
   mutations: {
@@ -27,6 +29,9 @@ export default createStore({
     },
     setExchangeRates(state, exchangeRates) {
       state.exchangeRates = exchangeRates;
+    },
+    setAPY7d(state, apy7d) {
+      state.apy7d = apy7d;
     },
   },
   actions: {
@@ -50,10 +55,12 @@ export default createStore({
       );
 
       const tickers = await fetchTickers();
+      const apy7d = await fetchAPY7Days();
 
       commit("setInitData", initData);
       commit("setPoolsData", poolsData);
       commit("setTickersData", tickers);
+      commit("setAPY7d", apy7d);
       commit("setReady", true);
     },
   },

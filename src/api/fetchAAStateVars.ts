@@ -24,5 +24,5 @@ export default async function fetchAAStateVars(
 
   const state = (await Client.api.getAaStateVars(payload)) as IState;
 
-  return parseAAState(state, delimiter);
+  return delimiter ? parseAAState(state, delimiter) : state;
 }

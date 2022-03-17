@@ -10,8 +10,15 @@ export default async function fetchInitialData(Client: Obyte.Client): Promise<{
 }> {
   const factory = await fetchAAStateVars(
     Client,
-    "B22543LKSS35Z55ROU4GDN26RT6MDKWU"
+    "MODBFVX2J2TRPQUK7XFTFQK73AB64NF3",
+    "",
+    "_"
   );
+  for (const aa in factory.pool) {
+    const pool = factory.pool[aa];
+    pool.asset = pool.pool_asset;
+  }
+  factory.pools = factory.pool;
   const a2sRegistry = await fetchAAStateVars(
     Client,
     "O6H6ZIFI57X3PLTYHOCVYPP5A553CYFQ",

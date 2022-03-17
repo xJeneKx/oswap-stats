@@ -8,7 +8,7 @@ import { ITickers } from "@/interfaces/tickers.interface";
 import Menu from "@/components/Menu.vue";
 import Footer from "@/components/Footer.vue";
 import useWindowSize from "@/composables/useWindowSize";
-import fetchAPY7Days from "@/api/fetchAPY7Days";
+//import fetchAPY7Days from "@/api/fetchAPY7Days";
 import {
   TableState,
   TableStateFilters,
@@ -21,7 +21,7 @@ const Client = inject("Obyte") as Obyte.Client;
 const store = useStore();
 const router = useRouter();
 const windowSize = useWindowSize();
-const apy7d = ref({}) as any;
+//const apy7d = ref({}) as any;
 
 store.dispatch("initIfNotInit", Client);
 
@@ -30,12 +30,13 @@ const poolsData = computed(() => store.state.poolsData);
 const tickers: ComputedRef<ITickers> = computed(() => store.state.tickers);
 const isReady = computed(() => store.state.ready);
 const isMobile = computed(() => windowSize.x.value < 576);
+const apy7d = computed(() => store.state.apy7d);
 
-async function updateAPY7d() {
+/*async function updateAPY7d() {
   apy7d.value = await fetchAPY7Days();
 }
 watch(poolsData, updateAPY7d);
-onMounted(updateAPY7d);
+onMounted(updateAPY7d);*/
 
 const sortedInfo = ref({
   columnKey: "tvl",
@@ -150,12 +151,12 @@ const data = computed(() => {
       key: pool.address,
       pool: {
         name: pool.ticker,
-        fee: pool.swapFee / 1000000000,
+        fee: pool.swapFee * 100,
         address: pool.address,
       },
       TVL,
       TVLString,
-      APY: apy7d.value[pool.address] || 0,
+      APY: apy7d.value[pool.address].apy || 0,
       volume,
       volumeString,
     };
@@ -168,10 +169,10 @@ const mobileData = computed(() => {
       key: pool.ticker,
       pool: {
         name: pool.ticker,
-        fee: pool.swapFee / 1000000000,
+        fee: pool.swapFee * 100,
         address: pool.address,
       },
-      APY: apy7d.value[pool.address] || 0,
+      APY: apy7d.value[pool.address].apy || 0,
       TVL: Number(pool.marketcap.toFixed(2)),
     };
   });
@@ -199,7 +200,7 @@ const handleChange = (
       margin: 36px auto 48px;
     "
   >
-    Statistics for oswap.io
+    Statistics for oswap v2
   </div>
   <div v-if="!isReady" style="text-align: center"><a-spin size="large" /></div>
 

@@ -3,18 +3,18 @@ import { ICandles } from "@/interfaces/candles.inerface";
 import { IExchangeRates } from "@/obyte";
 
 export function getVolumeInUSDHelper(
-  asset0: string,
-  asset1: string,
+  y_asset: string,
+  x_asset: string,
   candle: ICandles,
   exchangeRates: Ref<IExchangeRates>
 ): number {
-  if (exchangeRates.value[`${asset1}_USD`]) {
-    const price = 1 / candle.close_price;
-    const volume = price * candle.quote_volume;
-    return Number((exchangeRates.value[`${asset1}_USD`] * volume).toFixed(2));
-  } else if (exchangeRates.value[`${asset0}_USD`]) {
-    const volume = candle.close_price * candle.base_volume;
-    return Number((exchangeRates.value[`${asset0}_USD`] * volume).toFixed(2));
-  }
+  const y_asset_id = y_asset === "base" ? "GBYTE" : y_asset;
+  const x_asset_id = x_asset === "base" ? "GBYTE" : x_asset;
+  const x_rate = exchangeRates.value[`${x_asset_id}_USD`];
+  const y_rate = exchangeRates.value[`${y_asset_id}_USD`];
+  if (x_rate)
+    return +(x_rate * candle.base_volume).toFixed(2);
+  if (y_rate)
+    return +(y_rate * candle.quote_volume).toFixed(2);
   return 0;
 }

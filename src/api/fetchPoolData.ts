@@ -6,8 +6,8 @@ import { IAssetsList } from "@/interfaces/assets.interface";
 
 export interface IPool {
   asset: string;
-  asset0: string;
-  asset1: string;
+  y_asset: string;
+  x_asset: string;
   swap_fee: number;
 }
 
@@ -58,7 +58,7 @@ export default async function fetchPoolData(
     if (factory.pools) {
       Object.entries<IPool>(factory.pools).forEach((pool) => {
         if (pool[1].asset) {
-          [pool[1].asset0, pool[1].asset1].forEach((asset) => {
+          [pool[1].y_asset, pool[1].x_asset].forEach((asset) => {
             if (asset !== "base")
               assets[asset] = {
                 symbol: a2sRegistry.a2s[asset],
@@ -80,7 +80,7 @@ export default async function fetchPoolData(
     const _pools: Pool[] = [];
     const promises: Promise<void>[] = [];
     Object.entries<IPool>(factory.pools).forEach(([address, pool]) => {
-      const p = new Pool(address, [pool.asset0, pool.asset1]);
+      const p = new Pool(address, pool.x_asset, pool.y_asset);
       promises.push(p.init(Client, assets, decimals));
       _pools.push(p);
     });
