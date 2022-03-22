@@ -2,23 +2,29 @@ import fetchAAStateVars from "@/api/fetchAAStateVars";
 import Obyte from "@/obyte";
 import { IState } from "@/interfaces/aa.interface";
 
+const factoryAAs = ["OQLU4HOAIVJ32SDVBJA6AKD52OVTHAOF", "MODBFVX2J2TRPQUK7XFTFQK73AB64NF3"];
+
 export default async function fetchInitialData(Client: Obyte.Client): Promise<{
   factory: IState;
   a2sRegistry: IState;
   descriptionRegistry: IState;
   decimalsRegistry: IState;
 }> {
-  const factory = await fetchAAStateVars(
+  const fetchFactoryData = async (factoryAA: string) => await fetchAAStateVars(
     Client,
-    "MODBFVX2J2TRPQUK7XFTFQK73AB64NF3",
+    factoryAA,
     "",
     "_"
   );
-  for (const aa in factory.pool) {
-    const pool = factory.pool[aa];
+  const factories = await Promise.all(factoryAAs.map(aa => fetchFactoryData(aa)));
+  let pools: IState = { };
+  for (const f of factories)
+    pools = { ...pools, ...f.pool };
+  for (const aa in pools) {
+    const pool = pools[aa];
     pool.asset = pool.pool_asset;
   }
-  factory.pools = factory.pool;
+  const factory = { pool: pools, pools };
   const a2sRegistry = await fetchAAStateVars(
     Client,
     "O6H6ZIFI57X3PLTYHOCVYPP5A553CYFQ",
