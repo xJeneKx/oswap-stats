@@ -158,12 +158,12 @@ function getPriceText(amount: number) {
     return `${amount} ${pool.value.getTicker(
       pool.value.y_asset,
       poolsData.value.assets
-    )}/${pool.value.getSymbol(pool.value.x_asset, poolsData.value.assets)}`;
+    )}`;
   } else if (currentChart.value === 4) {
     return `${amount} ${pool.value.getSymbol(
       pool.value.x_asset,
       poolsData.value.assets
-    )}/${pool.value.getTicker(pool.value.y_asset, poolsData.value.assets)}`;
+    )}`;
   }
   return 0;
 }
