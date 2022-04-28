@@ -4,6 +4,7 @@ import fetchPoolData from "@/api/fetchPoolData";
 import fetchTickers from "@/api/fetchTickers";
 import fetchExchangeRates from "@/api/fetchExchangeRates";
 import fetchAPY7Days from "@/api/fetchAPY7Days";
+import fetchIconsList from "@/api/fetchIconsList";
 
 export default createStore({
   state: {
@@ -12,6 +13,7 @@ export default createStore({
     tickers: {},
     exchangeRates: {},
     apy7d: {},
+    icons: {},
     ready: false,
   },
   mutations: {
@@ -32,6 +34,9 @@ export default createStore({
     },
     setAPY7d(state, apy7d) {
       state.apy7d = apy7d;
+    },
+    setIcons(state, icons) {
+      state.icons = icons;
     },
   },
   actions: {
@@ -56,11 +61,13 @@ export default createStore({
 
       const tickers = await fetchTickers();
       const apy7d = await fetchAPY7Days();
+      const icons = await fetchIconsList();
 
       commit("setInitData", initData);
       commit("setPoolsData", poolsData);
       commit("setTickersData", tickers);
       commit("setAPY7d", apy7d);
+      commit("setIcons", icons);
       commit("setReady", true);
     },
   },

@@ -7,6 +7,7 @@ import Pool from "@/helpers/PoolHelper";
 import { ITickers } from "@/interfaces/tickers.interface";
 import Menu from "@/components/Menu.vue";
 import Footer from "@/components/Footer.vue";
+import Icons from "@/components/Icons.vue";
 import useWindowSize from "@/composables/useWindowSize";
 //import fetchAPY7Days from "@/api/fetchAPY7Days";
 import {
@@ -146,6 +147,9 @@ const data = computed(() => {
       pool.address
     );
     const volumeString = formatNumbers(volume);
+    
+    const xTicker = pool.getTicker(pool.x_asset, poolsData.value.assets);
+    const yTicker = pool.getTicker(pool.y_asset, poolsData.value.assets);
 
     return {
       key: pool.address,
@@ -153,6 +157,8 @@ const data = computed(() => {
         name: pool.ticker,
         fee: pool.swapFee * 100,
         address: pool.address,
+        xTicker,
+        yTicker
       },
       TVL,
       TVLString,
@@ -235,6 +241,8 @@ const handleChange = (
           </span>
         </template>
         <template #pool="{ text: objPool }">
+          <Icons :symbol="objPool.xTicker" :size="'small'" />
+          <Icons :symbol="objPool.yTicker" :size="'small'" />
           {{ objPool.name }}
           <a-tag class="fee" style="margin-left: 8px">{{ objPool.fee }}%</a-tag>
         </template>
