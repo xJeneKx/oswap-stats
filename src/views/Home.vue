@@ -241,8 +241,8 @@ const handleChange = (
           </span>
         </template>
         <template #pool="{ text: objPool }">
-          <Icons :symbol="objPool.xTicker" :size="'small'" />
-          <Icons :symbol="objPool.yTicker" :size="'small'" />
+          <Icons :symbol="objPool.xTicker" size="small" />
+          <Icons :symbol="objPool.yTicker" size="small" />
           {{ objPool.name }}
           <a-tag class="fee" style="margin-left: 8px">{{ objPool.fee }}%</a-tag>
         </template>
