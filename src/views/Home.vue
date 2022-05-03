@@ -7,7 +7,7 @@ import Pool from "@/helpers/PoolHelper";
 import { ITickers } from "@/interfaces/tickers.interface";
 import Menu from "@/components/Menu.vue";
 import Footer from "@/components/Footer.vue";
-import Icons from "@/components/Icons.vue";
+import AssetIcon from "@/components/AssetIcon.vue";
 import useWindowSize from "@/composables/useWindowSize";
 //import fetchAPY7Days from "@/api/fetchAPY7Days";
 import {
@@ -241,8 +241,8 @@ const handleChange = (
           </span>
         </template>
         <template #pool="{ text: objPool }">
-          <Icons :symbol="objPool.xTicker" size="small" />
-          <Icons :symbol="objPool.yTicker" size="small" />
+          <AssetIcon :symbol="objPool.xTicker" size="small" />
+          <AssetIcon :symbol="objPool.yTicker" size="small" />
           {{ objPool.name }}
           <a-tag class="fee" style="margin-left: 8px">{{ objPool.fee }}%</a-tag>
         </template>

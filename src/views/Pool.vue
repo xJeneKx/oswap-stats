@@ -13,7 +13,7 @@ import fetchAAHistory from "@/api/fetchAAHistory";
 import { ICandles } from "@/interfaces/candles.inerface";
 import { IHistory } from "@/interfaces/poolHistory.interface";
 import Menu from "@/components/Menu.vue";
-import Icons from "@/components/Icons.vue";
+import AssetIcon from "@/components/AssetIcon.vue";
 import useWindowSize from "@/composables/useWindowSize";
 import { addZero } from "@/helpers/date.helper";
 
@@ -543,8 +543,8 @@ onUnmounted(() => {
       <div style="margin: 8px">
         <a-row>
           <a-col :xs="24" :sm="24" :md="12">
-            <Icons :symbol="pool.getTicker(pool.x_asset, poolsData.assets)"  size="medium" />
-            <Icons :symbol="pool.getTicker(pool.y_asset, poolsData.assets)"  size="medium" />
+            <AssetIcon :symbol="pool.getTicker(pool.x_asset, poolsData.assets)"  size="medium" />
+            <AssetIcon :symbol="pool.getTicker(pool.y_asset, poolsData.assets)"  size="medium" />
             <span style="font-size: 24px; color: #fff">{{ pool.ticker }}</span>
             <a-tag class="tag fee">{{ pool.swapFee * 100 }}%</a-tag>
           </a-col>
@@ -588,7 +588,7 @@ onUnmounted(() => {
             "
           >
             <span class="tag">
-              <Icons :symbol="pool.getTicker(pool.x_asset, poolsData.assets)" size="small" />
+              <AssetIcon :symbol="pool.getTicker(pool.x_asset, poolsData.assets)" size="small" />
               1 {{ pool.getTicker(pool.x_asset, poolsData.assets) }} ≈
               {{
                 pool.getFormattedPrice(
@@ -608,7 +608,7 @@ onUnmounted(() => {
             "
           >
             <span class="tag">
-              <Icons :symbol="pool.getTicker(pool.y_asset, poolsData.assets)"  size="small" />
+              <AssetIcon :symbol="pool.getTicker(pool.y_asset, poolsData.assets)"  size="small" />
               1 {{ pool.getTicker(pool.y_asset, poolsData.assets) }} ≈
               {{
                 pool.getFormattedPrice(
