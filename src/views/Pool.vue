@@ -558,7 +558,7 @@ onUnmounted(() => {
             }"
           >
             <a
-              :href="'https://v2.oswap.io/#/add-liquidity/' + pool.address"
+              :href="'https://oswap.io/#/add-liquidity/' + pool.address"
               target="_blank"
             >
               <a-button
@@ -569,7 +569,7 @@ onUnmounted(() => {
               >
             </a>
             <a
-              :href="'https://v2.oswap.io/#/swap/' + pool.address"
+              :href="'https://oswap.io/#/swap/' + pool.address"
               target="_blank"
             >
               <a-button

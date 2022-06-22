@@ -33,7 +33,7 @@ function goToHome(e: Event) {
       </a>
       <div class="menu-items">
         <a href="/" :class="isHome ? 'active' : ''" @click="goToHome">Pools</a>
-        <a href="https://v2.oswap.io" target="_blank">Swap</a>
+        <a href="https://oswap.io" target="_blank">Swap</a>
       </div>
     </div>
   </div>
