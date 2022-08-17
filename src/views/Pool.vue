@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, inject, ref, watch, onMounted, Ref, onUnmounted } from "vue";
+import {computed, inject, ref, watch, onMounted, Ref, onUnmounted, ComputedRef} from "vue";
 import { useStore } from "vuex";
 import { useRoute } from "vue-router";
 import { createChart } from "lightweight-charts";
@@ -17,8 +17,7 @@ import AssetIcon from "@/components/AssetIcon.vue";
 import useWindowSize from "@/composables/useWindowSize";
 import { addZero } from "@/helpers/date.helper";
 
-import { InfoCircleOutlined } from "@ant-design/icons-vue";
-import Footer from "@/components/Footer.vue";
+import { InfoCircleOutlined, FilterOutlined } from "@ant-design/icons-vue";
 
 const Client = inject("Obyte") as Obyte.Client;
 const store = useStore();
@@ -40,6 +39,7 @@ const isReady = computed(() => store.state.ready);
 const poolsData = computed(() => store.state.poolsData);
 const tickers = computed(() => store.state.tickers);
 const apy7d = computed(() => store.state.apy7d);
+const miningApy = computed(() => store.state.miningApy);
 const isMobile = computed(() => windowSize.x.value < 576);
 const pool: Ref<Pool> = ref({} as Pool);
 const candles: Ref<ICandles[]> = ref([]);
@@ -55,6 +55,7 @@ const basePricesForChat = ref([]) as Ref<IForChart[]>;
 const quotePricesForChat = ref([]) as Ref<IForChart[]>;
 const currentChart = ref(1);
 const apyDetailsShown = ref(false);
+const filteredInfo = ref();
 
 let mousePosition = { x: 0, y: 0 };
 
@@ -400,21 +401,39 @@ function setChart(): void {
   c.value.timeScale().fitContent();
 }
 
-const columns = computed(() => {
-  let ready = 1;
-  let baseSymbol = "";
-  let quoteSymbol = "";
-  if (!pool.value.history?.length) {
-    ready = 0;
-  } else {
-    baseSymbol = pool.value.getSymbol(
+
+const symbols = computed(() => {
+  const baseSymbol = pool.value.getSymbol(
       pool.value.x_asset,
       poolsData.value.assets
-    );
-    quoteSymbol = pool.value.getSymbol(
+  );
+  const quoteSymbol = pool.value.getSymbol(
       pool.value.y_asset,
       poolsData.value.assets
-    );
+  );
+  return {
+    baseSymbol,
+    quoteSymbol,
+  }
+})
+
+const paginationPage = ref(1);
+const onPageChange = (page: number) => {
+  paginationPage.value = page;
+}
+
+const currentFilter = ref('all');
+const filterByCriteria = async (criteria?: string) => {
+  pool.value.history = await fetchAAHistory(pool.value.address, criteria);
+  paginationPage.value = 1;
+  currentFilter.value = criteria || 'all';
+}
+
+const columns = computed(() => {
+  let ready = 1;
+
+  if (!pool.value.history?.length) {
+    ready = 0;
   }
 
   return [
@@ -425,12 +444,12 @@ const columns = computed(() => {
       slots: { customRender: "type" },
     },
     {
-      title: ready ? `${baseSymbol} amount` : "Base Amount",
+      title: ready ? `${symbols.value.baseSymbol} amount` : "Base Amount",
       dataIndex: "baseAmount",
       key: "baseAmount",
     },
     {
-      title: ready ? `${quoteSymbol} amount` : "Quote Amount",
+      title: ready ? `${symbols.value.quoteSymbol} amount` : "Quote Amount",
       dataIndex: "quoteAmount",
       key: "quoteAmount",
     },
@@ -451,20 +470,11 @@ const columns = computed(() => {
 const data = computed(() => {
   if (!pool.value.history?.length) return [];
 
-  const baseSymbol = pool.value.getSymbol(
-    pool.value.x_asset,
-    poolsData.value.assets
-  );
-  const quoteSymbol = pool.value.getSymbol(
-    pool.value.y_asset,
-    poolsData.value.assets
-  );
-
   const typeMap: ITypeMap = {
     remove: "Remove",
     add: "Add",
-    buy: `Swap ${quoteSymbol} to ${baseSymbol}`,
-    sell: `Swap ${baseSymbol} to ${quoteSymbol}`,
+    buy: `Swap ${symbols.value.quoteSymbol} to ${symbols.value.baseSymbol}`,
+    sell: `Swap ${symbols.value.baseSymbol} to ${symbols.value.quoteSymbol}`,
   };
   return pool.value.history.map((item: IHistory) => {
     const bLeverage = item.type === 'buy_leverage' || item.type === 'sell_leverage';
@@ -495,8 +505,8 @@ const data = computed(() => {
       type,
       unit: item.trigger_unit,
       author: item.trigger_address,
-      base: baseSymbol,
-      quote: quoteSymbol,
+      base: symbols.value.baseSymbol,
+      quote: symbols.value.quoteSymbol,
       baseAmount: pool.value.assetValue(
         baseAmount,
         poolsData.value.assets[pool.value.x_asset]
@@ -654,7 +664,13 @@ onUnmounted(() => {
               </a-tooltip>
             </div>
             <div class="contentInBlock">
-              {{ apy7d[pool.address].apy }}%
+              <div> {{ apy7d[pool.address].apy }}% </div>
+              <div v-if="miningApy.data[pool.address]" class="mining-pool-apy">+{{ miningApy.data[pool.address] }}%
+                <a-tooltip>
+                  <template #title>Liquidity mining rewards from <a href="https://liquidity.obyte.org" target="_blank">liquidity.obyte.org</a></template>
+                  <InfoCircleOutlined />
+                </a-tooltip>
+              </div>
             </div>
             <div style="text-align: center" v-if="apyDetailsShown">
               <div class="subTitleInBlock">7-day earnings</div>
@@ -676,9 +692,10 @@ onUnmounted(() => {
         <a-col :xs="24" :sm="24" :md="18">
           <div
             style="
-              margin: 16px 8px;
+              margin: 16px 8px 20px;
               background-color: #1c2024;
               border-radius: 8px;
+              padding-bottom: 1px;
             "
           >
             <div style="padding: 16px">
@@ -726,12 +743,24 @@ onUnmounted(() => {
           </div>
         </a-col>
       </a-row>
+      <a-row style="color: #fff">
+        <div class="filters-block">
+          <div class="filters-list">
+            <FilterOutlined :style="{fontSize: '20px', color: '#6a737d', verticalAlign: '-4px'}" />
+            <a-button type="link" @click="filterByCriteria()" :class="{ activeFilter: currentFilter === 'all' }" class="filter-button">All</a-button>
+            <a-button type="link" @click="filterByCriteria('swap')" :class="{ activeFilter: currentFilter === 'swap' }" class="filter-button">Swap</a-button>
+            <a-button type="link" @click="filterByCriteria('liquidity')" :class="{ activeFilter: currentFilter === 'liquidity' }" class="filter-button">Add/Remove</a-button>
+            <a-button type="link" @click="filterByCriteria('leverage')" :class="{ activeFilter: currentFilter === 'leverage' }" class="filter-button">Leverage</a-button>
+          </div>
+        </div>
+      </a-row>
       <a-table
         class="table"
         :dataSource="data"
         :columns="columns"
         :rowClassName="(record, index) => 'table-pointer'"
         :scroll="{ x: true }"
+        :pagination="{ current: paginationPage, onChange: (page) => onPageChange(page) }"
       >
         <template #type="{ record }">
           <span>
@@ -752,7 +781,6 @@ onUnmounted(() => {
           </span>
         </template>
       </a-table>
-      <Footer />
     </div>
   </div>
 </template>
@@ -778,6 +806,23 @@ onUnmounted(() => {
   padding: 18px 12px;
   border-radius: 8px;
   margin: 16px 8px 20px;
+}
+.filters-block {
+  width: 100%;
+  padding: 0 8px;
+}
+.filters-list {
+  background-color: #26292f;
+  padding: 10px 20px;
+  border-bottom: 1px solid #1b1e23;
+}
+.filter-button {
+  color: #6a737d !important;
+  font-size: 16px;
+  padding: 4px 0 4px 20px;
+}
+.activeFilter {
+  color: #fff !important;
 }
 
 .titleInBlock {
@@ -812,6 +857,11 @@ onUnmounted(() => {
 
 .table {
   padding: 0 8px;
+}
+.mining-pool-apy {
+  padding-left: 8px;
+  font-size: 11px;
+  align-items: flex-end;
 }
 @media screen and (max-width: 600px) {
   .fee {

@@ -6,10 +6,10 @@ import Obyte from "@/obyte";
 import Pool from "@/helpers/PoolHelper";
 import { ITickers } from "@/interfaces/tickers.interface";
 import Menu from "@/components/Menu.vue";
-import Footer from "@/components/Footer.vue";
 import AssetIcon from "@/components/AssetIcon.vue";
 import useWindowSize from "@/composables/useWindowSize";
 //import fetchAPY7Days from "@/api/fetchAPY7Days";
+
 import {
   TableState,
   TableStateFilters,
@@ -28,6 +28,7 @@ store.dispatch("initIfNotInit", Client);
 
 const exchangeRates = computed(() => store.state.exchangeRates);
 const poolsData = computed(() => store.state.poolsData);
+const miningApy: ComputedRef<any> = computed(() => store.state.miningApy);
 const tickers: ComputedRef<ITickers> = computed(() => store.state.tickers);
 const isReady = computed(() => store.state.ready);
 const isMobile = computed(() => windowSize.x.value < 576);
@@ -89,7 +90,12 @@ const columns = computed(() => {
       dataIndex: "APY",
       key: "APY",
       sortDirections: ["descend"],
-      sorter: (a: any, b: any) => a.APY - b.APY,
+      sorter: (a: any, b: any) => {
+        return (
+          (a.APY.apy7d + a.APY.poolMiningApy) -
+          (b.APY.apy7d + b.APY.poolMiningApy)
+        );
+      },
       sortOrder: key === "APY" && "descend",
       slots: { title: "apy-title", customRender: "APY" },
     },
@@ -115,20 +121,24 @@ const mobileColumns = computed(() => {
       slots: { customRender: "pool" },
     },
     {
-      title: "TVL",
-      dataIndex: "TVL",
+      dataIndex: "TVLString",
       key: "tvl",
       sortDirections: ["descend"],
       sorter: (a: any, b: any) => a.TVLString - b.TVLString,
       sortOrder: key === "tvl" && "descend",
-      slots: { customRender: "TVL" },
+      slots: { title: "tvl-title", customRender: "TVL" },
     },
     {
       title: "APY",
       dataIndex: "APY",
       key: "APY",
       sortDirections: ["descend"],
-      sorter: (a: any, b: any) => a.APY - b.APY,
+      sorter: (a: any, b: any) => {
+        return (
+          (a.APY.apy7d + a.APY.poolMiningApy) -
+          (b.APY.apy7d + b.APY.poolMiningApy)
+        );
+      },
       sortOrder: key === "APY" && "descend",
       slots: { customRender: "APY" },
     },
@@ -147,9 +157,11 @@ const data = computed(() => {
       pool.address
     );
     const volumeString = formatNumbers(volume);
-    
+
     const xTicker = pool.getTicker(pool.x_asset, poolsData.value.assets);
     const yTicker = pool.getTicker(pool.y_asset, poolsData.value.assets);
+
+    const poolMiningApy = miningApy.value.data[pool.address] || 0;
 
     return {
       key: pool.address,
@@ -158,11 +170,14 @@ const data = computed(() => {
         fee: pool.swapFee * 100,
         address: pool.address,
         xTicker,
-        yTicker
+        yTicker,
       },
       TVL,
       TVLString,
-      APY: apy7d.value[pool.address].apy || 0,
+      APY: {
+        apy7d: apy7d.value[pool.address].apy || 0,
+        poolMiningApy,
+      },
       volume,
       volumeString,
     };
@@ -171,15 +186,29 @@ const data = computed(() => {
 
 const mobileData = computed(() => {
   return poolsData.value.pools.map((pool: Pool) => {
+    const poolMiningApy = miningApy.value.data[pool.address] || 0;
+
+    const TVL = Number(pool.marketcap.toFixed(2));
+    const TVLString = formatNumbers(TVL);
+
+    const xTicker = pool.getTicker(pool.x_asset, poolsData.value.assets);
+    const yTicker = pool.getTicker(pool.y_asset, poolsData.value.assets);
+
     return {
       key: pool.ticker,
       pool: {
         name: pool.ticker,
         fee: pool.swapFee * 100,
         address: pool.address,
+        xTicker,
+        yTicker,
       },
-      APY: apy7d.value[pool.address].apy || 0,
-      TVL: Number(pool.marketcap.toFixed(2)),
+      APY: {
+        apy7d: apy7d.value[pool.address].apy || 0,
+        poolMiningApy,
+      },
+      TVL,
+      TVLString
     };
   });
 });
@@ -241,21 +270,42 @@ const handleChange = (
           </span>
         </template>
         <template #pool="{ text: objPool }">
-          <AssetIcon :symbol="objPool.xTicker" size="small" />
-          <AssetIcon :symbol="objPool.yTicker" size="small" />
-          {{ objPool.name }}
-          <a-tag class="fee" style="margin-left: 8px">{{ objPool.fee }}%</a-tag>
+          <router-link :to="'/pool/' + objPool.address" class="linkToPool">
+            <AssetIcon :symbol="objPool.xTicker" size="small" />
+            <AssetIcon :symbol="objPool.yTicker" size="small" />
+            {{ objPool.name }}
+            <a-tag class="fee" style="margin-left: 8px">{{ objPool.fee }}%</a-tag>
+          </router-link>
         </template>
         <template #TVL="{ text }">${{ text }}</template>
-        <template #APY="{ text }">{{ text }}%</template>
+        <template #APY="{ text }">
+        <div v-if="text.poolMiningApy !== 0" class="apy-block">
+          <div>{{ text.apy7d }}%</div>
+          <div class="mining-pool-apy">+{{ text.poolMiningApy }}%
+            <a-tooltip>
+            <template #title>Liquidity mining rewards from <a href="https://liquidity.obyte.org" target="_blank">liquidity.obyte.org</a></template>
+            <InfoCircleOutlined />
+          </a-tooltip>
+          </div>
+        </div>
+        <div v-else class="apy7d">{{ text.apy7d }}%</div>
+        </template>
         <template #volume="{ text }">${{ text }}</template>
       </a-table>
-      <Footer :isHome="true" />
     </div>
   </div>
 </template>
 
 <style>
+.linkToPool {
+  display: block;
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.linkToPool:hover {
+  color: rgba(255, 255, 255, 0.85);
+}
+
 .table {
   border-radius: 8px;
 }
@@ -271,9 +321,37 @@ const handleChange = (
   display: inline-block;
 }
 
+.apy-block {
+  display: flex;
+  align-content: center;
+  align-items: center;
+}
+
+.mining-pool-apy {
+  display: inline-block;
+  padding-left: 8px;
+  font-size: 11px;
+}
+
+.apy7d {
+  text-align: left;
+}
+
 @media screen and (max-width: 600px) {
   .fee {
     display: none !important;
+  }
+  .apy-block {
+    flex-direction: column;
+  }
+  .mining-pool-apy {
+    font-size: 11px;
+  }
+  .apy7d {
+    text-align: center;
+  }
+  .ant-table-tbody > tr > td {
+    padding: 8px 8px !important;
   }
 }
 </style>
