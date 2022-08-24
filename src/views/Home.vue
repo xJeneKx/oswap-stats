@@ -8,6 +8,7 @@ import { ITickers } from "@/interfaces/tickers.interface";
 import Menu from "@/components/Menu.vue";
 import AssetIcon from "@/components/AssetIcon.vue";
 import useWindowSize from "@/composables/useWindowSize";
+import setTitle from "@/helpers/setTitle";
 //import fetchAPY7Days from "@/api/fetchAPY7Days";
 
 import {
@@ -39,6 +40,8 @@ const apy7d = computed(() => store.state.apy7d);
 }
 watch(poolsData, updateAPY7d);
 onMounted(updateAPY7d);*/
+
+setTitle(`Oswap pool statistics`);
 
 const sortedInfo = ref({
   columnKey: "tvl",
