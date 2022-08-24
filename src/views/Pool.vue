@@ -16,6 +16,7 @@ import Menu from "@/components/Menu.vue";
 import AssetIcon from "@/components/AssetIcon.vue";
 import useWindowSize from "@/composables/useWindowSize";
 import { addZero } from "@/helpers/date.helper";
+import setTitle from "@/helpers/setTitle";
 
 import { InfoCircleOutlined, FilterOutlined } from "@ant-design/icons-vue";
 
@@ -95,6 +96,10 @@ async function updatePool() {
   pool.value = poolsData.value.pools.find((p: Pool) => {
     return p.address === route.params.address;
   });
+
+  setTitle(
+    `Pool ${pool.value.ticker} statistics, transactions and rates | Oswap pool statistics`
+  );
 
   pool.value.history = await fetchAAHistory(pool.value.address);
 
