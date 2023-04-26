@@ -15,6 +15,7 @@ import {
   TableState,
   TableStateFilters,
 } from "ant-design-vue/es/table/interface";
+import { IFarmingPool } from "@/api/fetchFarmingAPY";
 import { InfoCircleOutlined } from "@ant-design/icons-vue";
 
 type Pagination = TableState["pagination"];
@@ -34,7 +35,7 @@ const tickers: ComputedRef<ITickers> = computed(() => store.state.tickers);
 const isReady = computed(() => store.state.ready);
 const isMobile = computed(() => windowSize.x.value < 576);
 const apy7d = computed(() => store.state.apy7d);
-
+const farmingAPY = computed<Array<IFarmingPool>>(() => store.state.farmingAPY);
 /*async function updateAPY7d() {
   apy7d.value = await fetchAPY7Days();
 }
@@ -165,6 +166,13 @@ const data = computed(() => {
     const yTicker = pool.getTicker(pool.y_asset, poolsData.value.assets);
 
     const poolMiningApy = miningApy.value.data[pool.address] || 0;
+    let poolFarmingApy = 0;
+
+    const farmingPool: IFarmingPool | undefined = farmingAPY.value.find(({address})=> address === pool.address);
+    
+    if (farmingPool) {
+      poolFarmingApy = Number(farmingPool.apy);
+    }
 
     return {
       key: pool.address,
@@ -180,6 +188,7 @@ const data = computed(() => {
       APY: {
         apy7d: apy7d.value[pool.address].apy || 0,
         poolMiningApy,
+        poolFarmingApy
       },
       volume,
       volumeString,
@@ -190,6 +199,13 @@ const data = computed(() => {
 const mobileData = computed(() => {
   return poolsData.value.pools.map((pool: Pool) => {
     const poolMiningApy = miningApy.value.data[pool.address] || 0;
+    let poolFarmingApy = 0;
+
+    const farmingPool: IFarmingPool | undefined = farmingAPY.value.find(({address})=> address === pool.address);
+    
+    if (farmingPool) {
+      poolFarmingApy = Number(farmingPool.apy);
+    }
 
     const TVL = Number(pool.marketcap.toFixed(2));
     const TVLString = formatNumbers(TVL);
@@ -209,6 +225,7 @@ const mobileData = computed(() => {
       APY: {
         apy7d: apy7d.value[pool.address].apy || 0,
         poolMiningApy,
+        poolFarmingApy
       },
       TVL,
       TVLString
@@ -282,16 +299,31 @@ const handleChange = (
         </template>
         <template #TVL="{ text }">${{ text }}</template>
         <template #APY="{ text }">
-        <div v-if="text.poolMiningApy !== 0" class="apy-block">
-          <div>{{ text.apy7d }}%</div>
-          <div class="mining-pool-apy">+{{ text.poolMiningApy }}%
+        <div v-if="text.poolMiningApy !== 0 || text.poolFarmingApy" class="apy-block">
+          <div>{{ text.apy7d.toLocaleString(undefined, {maximumFractionDigits: 18}) }}%</div>
+          <div class="mining-pool-apy">
+            <span v-if="text.poolMiningApy && text.poolMiningApy > text.poolFarmingApy">+{{ text.poolMiningApy.toLocaleString(undefined, {maximumFractionDigits: 18}) }}%</span>
+            <span v-else-if="text.poolFarmingApy">
+              +{{ text.poolFarmingApy.toLocaleString(undefined, {maximumFractionDigits: 18}) }}%
+            </span>{{ " " }}
             <a-tooltip>
-            <template #title>Liquidity mining rewards from <a href="https://liquidity.obyte.org" target="_blank">liquidity.obyte.org</a></template>
-            <InfoCircleOutlined />
-          </a-tooltip>
+              <template #title>
+                Liquidity mining rewards <br/>
+                <span v-if="text.poolMiningApy">
+                  {{ text.poolMiningApy.toLocaleString(undefined, {maximumFractionDigits: 18}) }}% from <a href="https://liquidity.obyte.org" target="_blank">liquidity.obyte.org</a>
+                </span>
+                <span v-if="text.poolMiningApy && text.poolFarmingApy">
+                  or
+                </span>
+                <span v-if="text.poolFarmingApy">
+                  {{ text.poolFarmingApy.toLocaleString(undefined, {maximumFractionDigits: 18}) }}% from <a href="https://token.oswap.io/farming" target="_blank">token.oswap.io</a>
+                </span>
+              </template>
+              <InfoCircleOutlined />
+            </a-tooltip>
           </div>
         </div>
-        <div v-else class="apy7d">{{ text.apy7d }}%</div>
+        <div v-else class="apy7d">{{ text.apy7d.toLocaleString(undefined, {maximumFractionDigits: 18}) }}%</div>
         </template>
         <template #volume="{ text }">${{ text }}</template>
       </a-table>

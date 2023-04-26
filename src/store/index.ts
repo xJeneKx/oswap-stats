@@ -6,6 +6,7 @@ import fetchExchangeRates from "@/api/fetchExchangeRates";
 import fetchAPY7Days from "@/api/fetchAPY7Days";
 import fetchMiningApy from "@/api/fetchMiningApy";
 import fetchIconsList from "@/api/fetchIconsList";
+import fetchFarmingAPY from "@/api/fetchFarmingAPY";
 
 export default createStore({
   state: {
@@ -17,6 +18,7 @@ export default createStore({
     apy7d: {},
     icons: {},
     ready: false,
+    farmingAPY: []
   },
   mutations: {
     setInitData(state, payload) {
@@ -37,6 +39,9 @@ export default createStore({
     setAPY7d(state, apy7d) {
       state.apy7d = apy7d;
     },
+    setFarmingAPY(state, apy) {
+      state.farmingAPY = apy;
+    },
     setMiningApy(state, miningApy) {
       state.miningApy = miningApy;
     },
@@ -55,19 +60,28 @@ export default createStore({
       const { factory, a2sRegistry, descriptionRegistry, decimalsRegistry } =
         initData;
 
-      const poolsData = await fetchPoolData(
-        Client,
-        factory,
-        a2sRegistry,
-        descriptionRegistry,
-        decimalsRegistry,
-        exchangeRates
-      );
-
-      const tickers = await fetchTickers();
-      const apy7d = await fetchAPY7Days();
-      const icons = await fetchIconsList();
-      const miningApy = await fetchMiningApy();
+      const [
+        poolsData,
+        tickers,
+        apy7d,
+        icons,
+        miningApy,
+        farmingAPY
+      ] = await Promise.all([
+        fetchPoolData(
+          Client,
+          factory,
+          a2sRegistry,
+          descriptionRegistry,
+          decimalsRegistry,
+          exchangeRates
+        ),
+        fetchTickers(),
+        fetchAPY7Days(),
+        fetchIconsList(),
+        fetchMiningApy(),
+        fetchFarmingAPY()
+      ]);
 
       commit("setInitData", initData);
       commit("setPoolsData", poolsData);
@@ -75,6 +89,7 @@ export default createStore({
       commit("setMiningApy", miningApy);
       commit("setAPY7d", apy7d);
       commit("setIcons", icons);
+      commit("setFarmingAPY", farmingAPY)
       commit("setReady", true);
     },
   },
