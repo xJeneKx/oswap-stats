@@ -249,8 +249,10 @@ const handleChange = (
   filters: TableStateFilters,
   sorter: any
 ) => {
-  paginationOptions.value.current = pagination?.current || 1;
-  router.replace({ hash: `#${paginationOptions.value.current}` });
+  const currentPage = pagination?.current || 1;
+
+  paginationOptions.value.current = currentPage;
+  router.replace({ hash: `#${currentPage}` });
 
   sortedInfo.value = {
     columnKey: sorter.columnKey,
