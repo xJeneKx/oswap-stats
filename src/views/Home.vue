@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { inject, computed, ComputedRef, ref, watch, onMounted } from "vue";
 import { useStore } from "vuex";
-import { useRouter } from "vue-router";
+import { useRouter, useRoute } from "vue-router";
 import Obyte from "@/obyte";
 import Pool from "@/helpers/PoolHelper";
 import { ITickers } from "@/interfaces/tickers.interface";
@@ -23,6 +23,7 @@ type Pagination = TableState["pagination"];
 const Client = inject("Obyte") as Obyte.Client;
 const store = useStore();
 const router = useRouter();
+const route = useRoute();
 const windowSize = useWindowSize();
 //const apy7d = ref({}) as any;
 
@@ -42,11 +43,19 @@ const farmingAPY = computed<Array<IFarmingPool>>(() => store.state.farmingAPY);
 watch(poolsData, updateAPY7d);
 onMounted(updateAPY7d);*/
 
+onMounted(() => {
+  if (route.hash) {
+    paginationOptions.value.current = Number(route.hash.replace("#", ""));
+  }
+})
+
 setTitle(`Oswap pool statistics`);
 
 const sortedInfo = ref({
   columnKey: "tvl",
 });
+
+const paginationOptions = ref({ current: 1 });
 
 if (localStorage.getItem("sort_key")) {
   sortedInfo.value = { columnKey: localStorage.getItem("sort_key") || "tvl" };
@@ -54,13 +63,15 @@ if (localStorage.getItem("sort_key")) {
 
 const customRow = (pool: { pool: { address: string } }) => {
   return {
-    onClick: () => {
-      router.push({
-        name: "Pool",
-        params: {
-          address: pool.pool.address,
-        },
-      });
+    onClick: (event: any) => {
+      if (!event.target.href) {
+        router.push({
+          name: "Pool",
+          params: {
+            address: pool.pool.address,
+          },
+        }); 
+      }
     },
   };
 };
@@ -238,6 +249,9 @@ const handleChange = (
   filters: TableStateFilters,
   sorter: any
 ) => {
+  paginationOptions.value.current = pagination?.current || 1;
+  router.replace({ hash: `#${paginationOptions.value.current}` });
+
   sortedInfo.value = {
     columnKey: sorter.columnKey,
   };
@@ -269,6 +283,7 @@ const handleChange = (
         :columns="isMobile ? mobileColumns : columns"
         :custom-row="customRow"
         :rowClassName="(record, index) => 'table-pointer'"
+        :pagination="paginationOptions"
         @change="handleChange"
       >
         <template #tvl-title>
