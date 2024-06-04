@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { inject, computed, ComputedRef, ref, watch, onMounted } from "vue";
+import { inject, computed, ComputedRef, ref, onMounted } from "vue";
 import { useStore } from "vuex";
 import { useRouter, useRoute } from "vue-router";
 import Obyte from "@/obyte";
@@ -16,7 +16,7 @@ import {
   TableStateFilters,
 } from "ant-design-vue/es/table/interface";
 import { IFarmingPool } from "@/api/fetchFarmingAPY";
-import { InfoCircleOutlined } from "@ant-design/icons-vue";
+import { InfoCircleOutlined, SearchOutlined } from "@ant-design/icons-vue";
 
 type Pagination = TableState["pagination"];
 
@@ -42,6 +42,8 @@ const farmingAPY = computed<Array<IFarmingPool>>(() => store.state.farmingAPY);
 }
 watch(poolsData, updateAPY7d);
 onMounted(updateAPY7d);*/
+
+const poolFilter = ref("");
 
 onMounted(() => {
   if (route.hash) {
@@ -70,7 +72,7 @@ const customRow = (pool: { pool: { address: string } }) => {
           params: {
             address: pool.pool.address,
           },
-        }); 
+        });
       }
     },
   };
@@ -88,10 +90,12 @@ const columns = computed(() => {
   const key = sortedInfo.value.columnKey;
   return [
     {
-      title: "Pool",
       dataIndex: "pool",
       key: "pool",
-      slots: { customRender: "pool" },
+      slots: {
+        title: "customTitle",
+        customRender: "pool",
+      },
     },
     {
       dataIndex: "TVLString",
@@ -130,10 +134,9 @@ const mobileColumns = computed(() => {
   const key = sortedInfo.value.columnKey;
   return [
     {
-      title: "Pool",
       dataIndex: "pool",
       key: "pool",
-      slots: { customRender: "pool" },
+      slots: { title: "customTitle", customRender: "pool" },
     },
     {
       dataIndex: "TVLString",
@@ -160,8 +163,18 @@ const mobileColumns = computed(() => {
   ];
 });
 
+const filteredPoolsData = computed(() => {
+  if (poolFilter.value) {
+    return poolsData.value.pools.filter((pool: any) => {
+      return pool.ticker.toLowerCase().includes(poolFilter.value.toLowerCase());
+    });
+  }
+
+  return poolsData.value.pools;
+});
+
 const data = computed(() => {
-  return poolsData.value.pools.map((pool: Pool) => {
+  return filteredPoolsData.value.map((pool: Pool) => {
     const TVL = Number(pool.marketcap.toFixed(2));
     const TVLString = formatNumbers(TVL);
 
@@ -180,7 +193,7 @@ const data = computed(() => {
     let poolFarmingApy = 0;
 
     const farmingPool: IFarmingPool | undefined = farmingAPY.value.find(({address})=> address === pool.address);
-    
+
     if (farmingPool) {
       poolFarmingApy = Number(farmingPool.apy);
     }
@@ -199,7 +212,7 @@ const data = computed(() => {
       APY: {
         apy7d: apy7d.value[pool.address].apy || 0,
         poolMiningApy,
-        poolFarmingApy
+        poolFarmingApy,
       },
       volume,
       volumeString,
@@ -208,7 +221,7 @@ const data = computed(() => {
 });
 
 const mobileData = computed(() => {
-  return poolsData.value.pools.map((pool: Pool) => {
+  return filteredPoolsData.value.map((pool: Pool) => {
     const poolMiningApy = miningApy.value.data[pool.address] || 0;
     let poolFarmingApy = 0;
 
@@ -288,6 +301,14 @@ const handleChange = (
         :pagination="paginationOptions"
         @change="handleChange"
       >
+        <template #customTitle>
+          <a-input-search
+            ref="searchInput"
+            placeholder="Search pool"
+            class="no-board-field"
+            v-model:value="poolFilter"
+          />
+        </template>
         <template #tvl-title>
           <span>
             TVL
@@ -387,6 +408,20 @@ const handleChange = (
 
 .apy7d {
   text-align: left;
+}
+
+.no-board-field {
+  border-left: 0 !important;
+  border-right: 0 !important;
+  border-top: 0 !important;
+}
+
+.ant-input-affix-wrapper:focus {
+  box-shadow: none !important;
+}
+
+.ant-input-affix-wrapper-focused {
+  box-shadow: none !important;
 }
 
 @media screen and (max-width: 600px) {
