@@ -19,6 +19,7 @@ import { addZero } from "@/helpers/date.helper";
 import setTitle from "@/helpers/setTitle";
 
 import { InfoCircleOutlined, FilterOutlined } from "@ant-design/icons-vue";
+import { IFarmingPool } from "@/api/fetchFarmingAPY";
 
 const Client = inject("Obyte") as Obyte.Client;
 const store = useStore();
@@ -40,6 +41,7 @@ const isReady = computed(() => store.state.ready);
 const poolsData = computed(() => store.state.poolsData);
 const tickers = computed(() => store.state.tickers);
 const apy7d = computed(() => store.state.apy7d);
+const farmingAPY = computed<Array<IFarmingPool>>(() => store.state.farmingAPY);
 const miningApy = computed(() => store.state.miningApy);
 const isMobile = computed(() => windowSize.x.value < 576);
 const pool: Ref<Pool> = ref({} as Pool);
@@ -422,6 +424,16 @@ const symbols = computed(() => {
   }
 })
 
+const poolFarmingAPY = computed(() => {
+  const farmingPool: IFarmingPool | undefined = farmingAPY.value.find(({address})=> address === pool?.value.address);
+  
+  if (farmingPool) {
+    return Number(farmingPool.apy);
+  }
+    
+  return 0;
+})
+
 const paginationPage = ref(1);
 const onPageChange = (page: number) => {
   paginationPage.value = page;
@@ -670,9 +682,24 @@ onUnmounted(() => {
             </div>
             <div class="contentInBlock">
               <div> {{ apy7d[pool.address].apy }}% </div>
-              <div v-if="miningApy.data[pool.address]" class="mining-pool-apy">+{{ miningApy.data[pool.address] }}%
+              <div v-if="miningApy.data[pool.address] || poolFarmingAPY" class="mining-pool-apy">
+                <span v-if="miningApy.data[pool.address] && miningApy.data[pool.address] > poolFarmingAPY">+{{ miningApy.data[pool.address].toLocaleString(undefined, {maximumFractionDigits: 18}) }}%</span>
+                <span v-else-if="poolFarmingAPY">
+                  +{{ poolFarmingAPY.toLocaleString(undefined, {maximumFractionDigits: 18}) }}%
+                </span>{{ " " }}
                 <a-tooltip>
-                  <template #title>Liquidity mining rewards from <a href="https://liquidity.obyte.org" target="_blank">liquidity.obyte.org</a></template>
+                  <template #title>
+                    Liquidity mining rewards <br/>
+                    <span v-if="miningApy.data[pool.address]">
+                      {{miningApy.data[pool.address].toLocaleString(undefined, {maximumFractionDigits: 18})}}% from <a href="https://liquidity.obyte.org" target="_blank">liquidity.obyte.org</a>
+                    </span>
+                    <span v-if="miningApy.data[pool.address] && poolFarmingAPY">
+                      or
+                    </span>
+                    <span v-if="poolFarmingAPY">
+                      {{ poolFarmingAPY.toLocaleString(undefined, {maximumFractionDigits: 18}) }}% from <a href="https://token.oswap.io/farming" target="_blank">token.oswap.io</a>
+                    </span>
+                  </template>
                   <InfoCircleOutlined />
                 </a-tooltip>
               </div>

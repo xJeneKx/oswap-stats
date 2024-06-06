@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { inject, computed, ComputedRef, ref, watch, onMounted } from "vue";
+import { inject, computed, ComputedRef, ref, onMounted } from "vue";
 import { useStore } from "vuex";
-import { useRouter } from "vue-router";
+import { useRouter, useRoute } from "vue-router";
 import Obyte from "@/obyte";
 import Pool from "@/helpers/PoolHelper";
 import { ITickers } from "@/interfaces/tickers.interface";
@@ -15,13 +15,15 @@ import {
   TableState,
   TableStateFilters,
 } from "ant-design-vue/es/table/interface";
-import { InfoCircleOutlined } from "@ant-design/icons-vue";
+import { IFarmingPool } from "@/api/fetchFarmingAPY";
+import { InfoCircleOutlined, SearchOutlined } from "@ant-design/icons-vue";
 
 type Pagination = TableState["pagination"];
 
 const Client = inject("Obyte") as Obyte.Client;
 const store = useStore();
 const router = useRouter();
+const route = useRoute();
 const windowSize = useWindowSize();
 //const apy7d = ref({}) as any;
 
@@ -34,12 +36,20 @@ const tickers: ComputedRef<ITickers> = computed(() => store.state.tickers);
 const isReady = computed(() => store.state.ready);
 const isMobile = computed(() => windowSize.x.value < 576);
 const apy7d = computed(() => store.state.apy7d);
-
+const farmingAPY = computed<Array<IFarmingPool>>(() => store.state.farmingAPY);
 /*async function updateAPY7d() {
   apy7d.value = await fetchAPY7Days();
 }
 watch(poolsData, updateAPY7d);
 onMounted(updateAPY7d);*/
+
+const poolFilter = ref("");
+
+onMounted(() => {
+  if (route.hash) {
+    paginationOptions.value.current = Number(route.hash.replace("#", ""));
+  }
+})
 
 setTitle(`Oswap pool statistics`);
 
@@ -47,19 +57,23 @@ const sortedInfo = ref({
   columnKey: "tvl",
 });
 
+const paginationOptions = ref({ current: 1 });
+
 if (localStorage.getItem("sort_key")) {
   sortedInfo.value = { columnKey: localStorage.getItem("sort_key") || "tvl" };
 }
 
 const customRow = (pool: { pool: { address: string } }) => {
   return {
-    onClick: () => {
-      router.push({
-        name: "Pool",
-        params: {
-          address: pool.pool.address,
-        },
-      });
+    onClick: (event: any) => {
+      if (!event.target.href) {
+        router.push({
+          name: "Pool",
+          params: {
+            address: pool.pool.address,
+          },
+        });
+      }
     },
   };
 };
@@ -76,10 +90,12 @@ const columns = computed(() => {
   const key = sortedInfo.value.columnKey;
   return [
     {
-      title: "Pool",
       dataIndex: "pool",
       key: "pool",
-      slots: { customRender: "pool" },
+      slots: {
+        title: "customTitle",
+        customRender: "pool",
+      },
     },
     {
       dataIndex: "TVLString",
@@ -118,10 +134,9 @@ const mobileColumns = computed(() => {
   const key = sortedInfo.value.columnKey;
   return [
     {
-      title: "Pool",
       dataIndex: "pool",
       key: "pool",
-      slots: { customRender: "pool" },
+      slots: { title: "customTitle", customRender: "pool" },
     },
     {
       dataIndex: "TVLString",
@@ -148,8 +163,18 @@ const mobileColumns = computed(() => {
   ];
 });
 
+const filteredPoolsData = computed(() => {
+  if (poolFilter.value) {
+    return poolsData.value.pools.filter((pool: any) => {
+      return pool.ticker.toLowerCase().includes(poolFilter.value.toLowerCase());
+    });
+  }
+
+  return poolsData.value.pools;
+});
+
 const data = computed(() => {
-  return poolsData.value.pools.map((pool: Pool) => {
+  return filteredPoolsData.value.map((pool: Pool) => {
     const TVL = Number(pool.marketcap.toFixed(2));
     const TVLString = formatNumbers(TVL);
 
@@ -165,6 +190,13 @@ const data = computed(() => {
     const yTicker = pool.getTicker(pool.y_asset, poolsData.value.assets);
 
     const poolMiningApy = miningApy.value.data[pool.address] || 0;
+    let poolFarmingApy = 0;
+
+    const farmingPool: IFarmingPool | undefined = farmingAPY.value.find(({address})=> address === pool.address);
+
+    if (farmingPool) {
+      poolFarmingApy = Number(farmingPool.apy);
+    }
 
     return {
       key: pool.address,
@@ -180,6 +212,7 @@ const data = computed(() => {
       APY: {
         apy7d: apy7d.value[pool.address].apy || 0,
         poolMiningApy,
+        poolFarmingApy,
       },
       volume,
       volumeString,
@@ -188,8 +221,15 @@ const data = computed(() => {
 });
 
 const mobileData = computed(() => {
-  return poolsData.value.pools.map((pool: Pool) => {
+  return filteredPoolsData.value.map((pool: Pool) => {
     const poolMiningApy = miningApy.value.data[pool.address] || 0;
+    let poolFarmingApy = 0;
+
+    const farmingPool: IFarmingPool | undefined = farmingAPY.value.find(({address})=> address === pool.address);
+    
+    if (farmingPool) {
+      poolFarmingApy = Number(farmingPool.apy);
+    }
 
     const TVL = Number(pool.marketcap.toFixed(2));
     const TVLString = formatNumbers(TVL);
@@ -209,6 +249,7 @@ const mobileData = computed(() => {
       APY: {
         apy7d: apy7d.value[pool.address].apy || 0,
         poolMiningApy,
+        poolFarmingApy
       },
       TVL,
       TVLString
@@ -221,6 +262,11 @@ const handleChange = (
   filters: TableStateFilters,
   sorter: any
 ) => {
+  const currentPage = pagination?.current || 1;
+
+  paginationOptions.value.current = currentPage;
+  router.replace({ hash: `#${currentPage}` });
+
   sortedInfo.value = {
     columnKey: sorter.columnKey,
   };
@@ -252,8 +298,17 @@ const handleChange = (
         :columns="isMobile ? mobileColumns : columns"
         :custom-row="customRow"
         :rowClassName="(record, index) => 'table-pointer'"
+        :pagination="paginationOptions"
         @change="handleChange"
       >
+        <template #customTitle>
+          <a-input-search
+            ref="searchInput"
+            placeholder="Search pool"
+            class="no-board-field"
+            v-model:value="poolFilter"
+          />
+        </template>
         <template #tvl-title>
           <span>
             TVL
@@ -282,16 +337,31 @@ const handleChange = (
         </template>
         <template #TVL="{ text }">${{ text }}</template>
         <template #APY="{ text }">
-        <div v-if="text.poolMiningApy !== 0" class="apy-block">
-          <div>{{ text.apy7d }}%</div>
-          <div class="mining-pool-apy">+{{ text.poolMiningApy }}%
+        <div v-if="text.poolMiningApy !== 0 || text.poolFarmingApy" class="apy-block">
+          <div>{{ text.apy7d.toLocaleString(undefined, {maximumFractionDigits: 18}) }}%</div>
+          <div class="mining-pool-apy">
+            <span v-if="text.poolMiningApy && text.poolMiningApy > text.poolFarmingApy">+{{ text.poolMiningApy.toLocaleString(undefined, {maximumFractionDigits: 18}) }}%</span>
+            <span v-else-if="text.poolFarmingApy">
+              +{{ text.poolFarmingApy.toLocaleString(undefined, {maximumFractionDigits: 18}) }}%
+            </span>{{ " " }}
             <a-tooltip>
-            <template #title>Liquidity mining rewards from <a href="https://liquidity.obyte.org" target="_blank">liquidity.obyte.org</a></template>
-            <InfoCircleOutlined />
-          </a-tooltip>
+              <template #title>
+                Liquidity mining rewards <br/>
+                <span v-if="text.poolMiningApy">
+                  {{ text.poolMiningApy.toLocaleString(undefined, {maximumFractionDigits: 18}) }}% from <a href="https://liquidity.obyte.org" target="_blank">liquidity.obyte.org</a>
+                </span>
+                <span v-if="text.poolMiningApy && text.poolFarmingApy">
+                  or
+                </span>
+                <span v-if="text.poolFarmingApy">
+                  {{ text.poolFarmingApy.toLocaleString(undefined, {maximumFractionDigits: 18}) }}% from <a href="https://token.oswap.io/farming" target="_blank">token.oswap.io</a>
+                </span>
+              </template>
+              <InfoCircleOutlined />
+            </a-tooltip>
           </div>
         </div>
-        <div v-else class="apy7d">{{ text.apy7d }}%</div>
+        <div v-else class="apy7d">{{ text.apy7d.toLocaleString(undefined, {maximumFractionDigits: 18}) }}%</div>
         </template>
         <template #volume="{ text }">${{ text }}</template>
       </a-table>
@@ -338,6 +408,20 @@ const handleChange = (
 
 .apy7d {
   text-align: left;
+}
+
+.no-board-field {
+  border-left: 0 !important;
+  border-right: 0 !important;
+  border-top: 0 !important;
+}
+
+.ant-input-affix-wrapper:focus {
+  box-shadow: none !important;
+}
+
+.ant-input-affix-wrapper-focused {
+  box-shadow: none !important;
 }
 
 @media screen and (max-width: 600px) {
