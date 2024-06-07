@@ -2,7 +2,6 @@
 import { inject, computed, ComputedRef, ref, onMounted } from "vue";
 import { useStore } from "vuex";
 import { useRouter, useRoute } from "vue-router";
-import Obyte from "@/obyte";
 import Pool from "@/helpers/PoolHelper";
 import { ITickers } from "@/interfaces/tickers.interface";
 import Menu from "@/components/Menu.vue";
@@ -20,14 +19,13 @@ import { InfoCircleOutlined, SearchOutlined } from "@ant-design/icons-vue";
 
 type Pagination = TableState["pagination"];
 
-const Client = inject("Obyte") as Obyte.Client;
 const store = useStore();
 const router = useRouter();
 const route = useRoute();
 const windowSize = useWindowSize();
 //const apy7d = ref({}) as any;
 
-store.dispatch("initIfNotInit", Client);
+store.dispatch("initIfNotInit");
 
 const exchangeRates = computed(() => store.state.exchangeRates);
 const poolsData = computed(() => store.state.poolsData);

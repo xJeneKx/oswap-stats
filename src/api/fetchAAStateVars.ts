@@ -1,5 +1,6 @@
+import axios from "axios";
+import { HUB_HOST } from "../../config";
 import { parseAAState } from "@/helpers/AAHelpers";
-import Obyte from "@/obyte";
 
 import { IState } from "@/interfaces/aa.interface";
 
@@ -9,7 +10,6 @@ interface IPayload {
 }
 
 export default async function fetchAAStateVars(
-  Client: Obyte.Client,
   address: string,
   prefix?: string,
   delimiter?: string
@@ -22,7 +22,7 @@ export default async function fetchAAStateVars(
     payload.var_prefix = prefix;
   }
 
-  const state = (await Client.api.getAaStateVars(payload)) as IState;
+  const { data } = await axios.post(`${HUB_HOST}/get_aa_state_vars`, payload);
 
-  return delimiter ? parseAAState(state, delimiter) : state;
+  return delimiter ? parseAAState(data.data, delimiter) : data.data;
 }
