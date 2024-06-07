@@ -1,11 +1,9 @@
 import fetchAAInfo from "@/api/fetchAAInfo";
-import Obyte from "@/obyte";
 import { IAssetsList, IAsset } from "@/interfaces/assets.interface";
 import { IDecimals } from "@/interfaces/decimals.interface";
 import { ITickers } from "@/interfaces/tickers.interface";
-import { ICandles } from "@/interfaces/candles.inerface";
 import { IState } from "@/interfaces/aa.interface";
-import { getPoolState } from 'oswap-v2-sdk';
+import { getPoolState } from "oswap-v2-sdk";
 
 interface IExchangeRates {
   [key: string]: number;
@@ -45,11 +43,10 @@ export default class Pool {
   }
 
   async init(
-    Client: Obyte.Client,
     assets: IAssetsList,
     decimals: IDecimals
   ): Promise<void> {
-    const { info, params, stateVars } = await fetchAAInfo(Client, this.address);
+    const { info, params, stateVars } = await fetchAAInfo(this.address);
     this.params = params;
     this.stateVars = stateVars;
     this.swapFee = info.swap_fee;

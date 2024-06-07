@@ -5,7 +5,6 @@ import { useRoute } from "vue-router";
 import { createChart } from "lightweight-charts";
 import { DateTime } from "luxon";
 import { getVolumeInUSDHelper } from "@/helpers/volumeInUSD.helper";
-import Obyte from "@/obyte";
 import Pool from "@/helpers/PoolHelper";
 import fetchCandlesForLast60Days from "@/api/fetchCandlesForLast60Days";
 import fetchBalancesForLast60Days from "@/api/fetchBalancesForLast60Days";
@@ -21,7 +20,6 @@ import setTitle from "@/helpers/setTitle";
 import { InfoCircleOutlined, FilterOutlined } from "@ant-design/icons-vue";
 import { IFarmingPool } from "@/api/fetchFarmingAPY";
 
-const Client = inject("Obyte") as Obyte.Client;
 const store = useStore();
 const route = useRoute();
 const windowSize = useWindowSize();
@@ -35,7 +33,7 @@ interface ITypeMap {
   [key: string]: string;
 }
 
-store.dispatch("initIfNotInit", Client);
+store.dispatch("initIfNotInit");
 const exchangeRates = computed(() => store.state.exchangeRates);
 const isReady = computed(() => store.state.ready);
 const poolsData = computed(() => store.state.poolsData);

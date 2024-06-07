@@ -50,13 +50,13 @@ export default createStore({
     },
   },
   actions: {
-    async initIfNotInit({ commit, state }, Client) {
+    async initIfNotInit({ commit, state }) {
       if (state.ready) return;
 
       const exchangeRates = await fetchExchangeRates();
       commit("setExchangeRates", exchangeRates);
 
-      const initData = await fetchInitialData(Client);
+      const initData = await fetchInitialData();
       const { factory, a2sRegistry, descriptionRegistry, decimalsRegistry } =
         initData;
 
@@ -69,7 +69,6 @@ export default createStore({
         farmingAPY
       ] = await Promise.all([
         fetchPoolData(
-          Client,
           factory,
           a2sRegistry,
           descriptionRegistry,
@@ -89,7 +88,7 @@ export default createStore({
       commit("setMiningApy", miningApy);
       commit("setAPY7d", apy7d);
       commit("setIcons", icons);
-      commit("setFarmingAPY", farmingAPY)
+      commit("setFarmingAPY", farmingAPY);
       commit("setReady", true);
     },
   },

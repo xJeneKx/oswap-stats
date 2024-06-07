@@ -1,4 +1,4 @@
-import Obyte, { IExchangeRates } from "@/obyte";
+import { IExchangeRates } from "@/obyte";
 import Pool from "@/helpers/PoolHelper";
 import { IState } from "@/interfaces/aa.interface";
 import { IDecimals } from "@/interfaces/decimals.interface";
@@ -28,7 +28,6 @@ const baseData = {
 };
 
 export default async function fetchPoolData(
-  Client: Obyte.Client,
   factory: IState,
   a2sRegistry: IState,
   descriptionRegistry: IState,
@@ -81,7 +80,7 @@ export default async function fetchPoolData(
     const promises: Promise<void>[] = [];
     Object.entries<IPool>(factory.pools).forEach(([address, pool]) => {
       const p = new Pool(address, pool.x_asset, pool.y_asset);
-      promises.push(p.init(Client, assets, decimals));
+      promises.push(p.init(assets, decimals));
       _pools.push(p);
     });
     await Promise.all(promises);
