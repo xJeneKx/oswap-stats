@@ -570,7 +570,9 @@ onUnmounted(() => {
           <a-col :xs="24" :sm="24" :md="12">
             <AssetIcon :symbol="pool.getTicker(pool.x_asset, poolsData.assets)"  size="medium" />
             <AssetIcon :symbol="pool.getTicker(pool.y_asset, poolsData.assets)"  size="medium" />
-            <span style="font-size: 24px; color: #fff">{{ pool.ticker }}</span>
+            <h1 style="font-size: 24px; color: #fff; display: inline">
+              {{ pool.ticker }}
+            </h1>
             <a-tag class="tag fee">{{ pool.swapFee * 100 }}%</a-tag>
           </a-col>
           <a-col

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { inject, computed, ComputedRef, ref, onMounted } from "vue";
+import {inject, computed, ComputedRef, ref, onMounted, h} from "vue";
 import { useStore } from "vuex";
 import { useRouter, useRoute } from "vue-router";
 import Pool from "@/helpers/PoolHelper";
@@ -8,6 +8,7 @@ import Menu from "@/components/Menu.vue";
 import AssetIcon from "@/components/AssetIcon.vue";
 import useWindowSize from "@/composables/useWindowSize";
 import setTitle from "@/helpers/setTitle";
+import PaginationForTable from "@/components/PaginationForTable.vue";
 //import fetchAPY7Days from "@/api/fetchAPY7Days";
 
 import {
@@ -45,9 +46,16 @@ const poolFilter = ref("");
 
 onMounted(() => {
   if (route.hash) {
-    paginationOptions.value.current = Number(route.hash.replace("#", ""));
+    const page = route.hash.replace("#", "");
+    router.replace({ query: { page } });
+    paginationOptions.value.current = parseInt(page);
+    return;
   }
-})
+
+  if (route.query.page) {
+    paginationOptions.value.current = parseInt(route.query.page as string);
+  }
+});
 
 setTitle(`Oswap pool statistics`);
 
@@ -55,7 +63,16 @@ const sortedInfo = ref({
   columnKey: "tvl",
 });
 
-const paginationOptions = ref({ current: 1 });
+const paginationOptions = ref({
+  current: 1,
+  itemRender: (state: any) => {
+    if (state.type === "prev" || state.type === "next") {
+      return state.originalElement;
+    }
+
+    return h(PaginationForTable, { page: state.page }, state.originalElement);
+  },
+});
 
 if (localStorage.getItem("sort_key")) {
   sortedInfo.value = { columnKey: localStorage.getItem("sort_key") || "tvl" };
@@ -263,7 +280,7 @@ const handleChange = (
   const currentPage = pagination?.current || 1;
 
   paginationOptions.value.current = currentPage;
-  router.replace({ hash: `#${currentPage}` });
+  router.replace({ query: { page: currentPage } });
 
   sortedInfo.value = {
     columnKey: sorter.columnKey,
@@ -274,7 +291,7 @@ const handleChange = (
 
 <template>
   <Menu :is-home="true" />
-  <div
+  <h1
     style="
       color: #fff;
       text-align: center;
@@ -283,7 +300,7 @@ const handleChange = (
     "
   >
     Statistics for oswap v2
-  </div>
+  </h1>
   <div v-if="!isReady" style="text-align: center"><a-spin size="large" /></div>
 
   <div v-if="isReady">
