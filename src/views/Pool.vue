@@ -819,10 +819,10 @@ onUnmounted(() => {
         <div class="filters-block">
           <div class="filters-list">
             <FilterOutlined :style="{fontSize: '20px', color: '#6a737d', verticalAlign: '-4px'}" />
-            <a-button type="link" @click="filterByCriteria()" :class="{ activeFilter: currentFilter === 'all' }" class="filter-button">All</a-button>
-            <a-button type="link" @click="filterByCriteria('swap')" :class="{ activeFilter: currentFilter === 'swap' }" class="filter-button">Swap</a-button>
-            <a-button type="link" @click="filterByCriteria('liquidity')" :class="{ activeFilter: currentFilter === 'liquidity' }" class="filter-button">Add/Remove</a-button>
-            <a-button type="link" @click="filterByCriteria('leverage')" :class="{ activeFilter: currentFilter === 'leverage' }" class="filter-button">Leverage</a-button>
+            <a href="?" type="link" @click.prevent="filterByCriteria()" :class="{ activeFilter: currentFilter === 'all' }" class="filter-button">All</a>
+            <a href="?filter=swap" type="link" @click.prevent="filterByCriteria('swap')" :class="{ activeFilter: currentFilter === 'swap' }" class="filter-button">Swap</a>
+            <a href="?filter=liquidity" type="link" @click.prevent="filterByCriteria('liquidity')" :class="{ activeFilter: currentFilter === 'liquidity' }" class="filter-button">Add/Remove</a>
+            <a href="?filter=leverage" type="link" @click.prevent="filterByCriteria('leverage')" :class="{ activeFilter: currentFilter === 'leverage' }" class="filter-button">Leverage</a>
           </div>
         </div>
       </a-row>
