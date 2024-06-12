@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import {computed, inject, ref, watch, onMounted, Ref, onUnmounted, ComputedRef} from "vue";
+import { computed, ref, watch, onMounted, Ref, onUnmounted, h, nextTick } from "vue";
 import { useStore } from "vuex";
-import { useRoute } from "vue-router";
+import { useRoute, useRouter } from "vue-router";
 import { createChart } from "lightweight-charts";
 import { DateTime } from "luxon";
 import { getVolumeInUSDHelper } from "@/helpers/volumeInUSD.helper";
@@ -13,6 +13,7 @@ import { ICandles } from "@/interfaces/candles.inerface";
 import { IHistory } from "@/interfaces/poolHistory.interface";
 import Menu from "@/components/Menu.vue";
 import AssetIcon from "@/components/AssetIcon.vue";
+import PaginationForTable from "@/components/PaginationForTable.vue";
 import useWindowSize from "@/composables/useWindowSize";
 import { addZero } from "@/helpers/date.helper";
 import setTitle from "@/helpers/setTitle";
@@ -22,6 +23,7 @@ import { IFarmingPool } from "@/api/fetchFarmingAPY";
 
 const store = useStore();
 const route = useRoute();
+const router = useRouter();
 const windowSize = useWindowSize();
 
 interface IForChart {
@@ -101,7 +103,14 @@ async function updatePool() {
     `Pool ${pool.value.ticker} statistics, transactions and rates | Oswap pool statistics`
   );
 
-  pool.value.history = await fetchAAHistory(pool.value.address);
+  const criteria = route.query.filter;
+  paginationPage.value = parseInt(route.query.page as string) || 1;
+  currentFilter.value = (criteria as string) || "all";
+
+  pool.value.history = await fetchAAHistory(
+    pool.value.address,
+    criteria as string
+  );
 
   const { assets } = poolsData.value;
   candles.value = await fetchCandlesForLast60Days(
@@ -437,11 +446,41 @@ const onPageChange = (page: number) => {
   paginationPage.value = page;
 }
 
-const currentFilter = ref('all');
-const filterByCriteria = async (criteria?: string) => {
+const currentFilter = ref("all");
+const filterByCriteria = async (criteria?: string, page?: number) => {
   pool.value.history = await fetchAAHistory(pool.value.address, criteria);
-  paginationPage.value = 1;
-  currentFilter.value = criteria || 'all';
+  paginationPage.value = page || 1;
+  currentFilter.value = criteria || "all";
+  await router.push({
+    query: { page: page || 1, filter: criteria },
+    hash: route.hash || undefined,
+  });
+};
+
+function itemRender(state: any) {
+  if (state.type === "prev" || state.type === "next") {
+    return state.originalElement;
+  }
+
+  return h(PaginationForTable, { page: state.page }, state.originalElement);
+}
+
+async function setDataFromQuery() {
+  await nextTick();
+  let { page, filter } = route.query;
+
+  if (
+    (!filter && currentFilter.value !== "all") ||
+    (filter && currentFilter.value !== filter)
+  ) {
+    currentFilter.value = filter as string;
+    await filterByCriteria(
+      filter as string,
+      parseInt(page as string) || undefined
+    );
+  } else if (page) {
+    paginationPage.value = parseInt(page as string);
+  }
 }
 
 const columns = computed(() => {
@@ -546,6 +585,7 @@ watch(
 );
 watch([chart, candles], fillChart);
 watch(currentChart, setChart);
+watch(() => route.query, setDataFromQuery);
 onMounted(updatePool);
 onUnmounted(() => {
   window.removeEventListener("resize", resize);
@@ -792,7 +832,7 @@ onUnmounted(() => {
         :columns="columns"
         :rowClassName="(record, index) => 'table-pointer'"
         :scroll="{ x: true }"
-        :pagination="{ current: paginationPage, onChange: (page) => onPageChange(page) }"
+        :pagination="{ current: paginationPage, onChange: (page: any) => onPageChange(page), itemRender }"
       >
         <template #type="{ record }">
           <span>
