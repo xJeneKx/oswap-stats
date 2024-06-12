@@ -7,7 +7,13 @@ export default async function fetchAAHistory(
   poolAddress: string,
   type?: string
 ): Promise<ITickers> {
-  const { data } = await axios.get(`${API_HOST}/api/v1/history/${poolAddress}`, { params: { type } });
+  if (type && type === "all") {
+    type = undefined;
+  }
+  const { data } = await axios.get(
+    `${API_HOST}/api/v1/history/${poolAddress}`,
+    { params: { type } }
+  );
 
   return data;
 }
