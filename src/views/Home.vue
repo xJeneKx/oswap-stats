@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import {inject, computed, ComputedRef, ref, onMounted, h} from "vue";
+import {inject, computed, ComputedRef, ref, onMounted, h, watch} from "vue";
 import { useStore } from "vuex";
 import { useRouter, useRoute } from "vue-router";
 import Pool from "@/helpers/PoolHelper";
@@ -280,13 +280,20 @@ const handleChange = (
   const currentPage = pagination?.current || 1;
 
   paginationOptions.value.current = currentPage;
-  router.replace({ query: { page: currentPage } });
+  router.push({ query: { page: currentPage } });
 
   sortedInfo.value = {
     columnKey: sorter.columnKey,
   };
   localStorage.setItem("sort_key", sorter.columnKey);
 };
+
+watch(
+  () => route.query,
+  (newQuery) => {
+    paginationOptions.value.current = Number(newQuery?.page) || 1;
+  }
+);
 </script>
 
 <template>
