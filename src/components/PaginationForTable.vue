@@ -15,7 +15,9 @@ function goToPage(page: number) {
 </script>
 
 <template>
-  <a :href="'?page=' + page" @click.prevent="goToPage(page)"><slot></slot></a>
+  <a :href="'?page=' + page" @click.prevent="goToPage(page)" :key="page"
+    ><slot></slot
+  ></a>
 </template>
 
 <style scoped>

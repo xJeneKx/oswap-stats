@@ -444,7 +444,11 @@ const poolFarmingAPY = computed(() => {
 const paginationPage = ref(1);
 const onPageChange = (page: number) => {
   paginationPage.value = page;
-}
+  router.push({
+    query: { ...route.query, page },
+    hash: route.hash || undefined,
+  });
+};
 
 const currentFilter = ref("all");
 const filterByCriteria = async (criteria?: string, page?: number) => {
