@@ -482,8 +482,8 @@ async function setDataFromQuery() {
       filter as string,
       parseInt(page as string) || undefined
     );
-  } else if (page) {
-    paginationPage.value = parseInt(page as string);
+  } else {
+    paginationPage.value = parseInt(page as string) || 1;
   }
 }
 
@@ -821,7 +821,7 @@ onUnmounted(() => {
       </a-row>
       <a-row style="color: #fff">
         <div class="filters-block">
-          <div class="filters-list">
+          <div class="filters-list" style="border-radius: 8px 8px 0 0">
             <FilterOutlined :style="{fontSize: '20px', color: '#6a737d', verticalAlign: '-4px'}" />
             <a href="?" type="link" @click.prevent="filterByCriteria()" :class="{ activeFilter: currentFilter === 'all' }" class="filter-button">All</a>
             <a href="?filter=swap" type="link" @click.prevent="filterByCriteria('swap')" :class="{ activeFilter: currentFilter === 'swap' }" class="filter-button">Swap</a>
@@ -831,6 +831,7 @@ onUnmounted(() => {
         </div>
       </a-row>
       <a-table
+        id="poolTable"
         class="table"
         :dataSource="data"
         :columns="columns"
@@ -972,5 +973,9 @@ onUnmounted(() => {
 #ttDate {
   margin-top: 4px;
   font-size: 11px;
+}
+
+#poolTable .ant-table-scroll {
+  border-radius: 0 0 8px 8px;
 }
 </style>

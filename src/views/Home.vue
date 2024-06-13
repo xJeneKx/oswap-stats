@@ -315,6 +315,7 @@ watch(
       style="max-width: 1200px; width: 90%; margin: 16px auto; padding: 0 16px"
     >
       <a-table
+        id="homeTable"
         class="table"
         :dataSource="isMobile ? mobileData : data"
         :columns="isMobile ? mobileColumns : columns"
@@ -462,5 +463,25 @@ watch(
   .ant-table-tbody > tr > td {
     padding: 8px 8px !important;
   }
+}
+
+#homeTable {
+  border-radius: 8px;
+}
+
+#homeTable thead > tr > th:first-child {
+  border-radius: 8px 0 0 0;
+}
+
+#homeTable thead > tr > th:last-child {
+  border-radius: 0 8px 0 0;
+}
+
+#homeTable tbody > tr:last-child > td:first-child {
+  border-radius: 0 0 0 8px;
+}
+
+#homeTable tbody > tr:last-child > td:last-child {
+  border-radius: 0 0 8px 0;
 }
 </style>
